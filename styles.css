@@ -1215,3 +1215,133 @@ body.dark-mode {
     transform: rotate(360deg);
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Advanced Filters Panel                                            */
+/* ------------------------------------------------------------------ */
+.advanced-filters {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease;
+}
+
+.advanced-filters .filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.advanced-filters .filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+}
+
+.advanced-filters .filter-group label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.advanced-filters select,
+.advanced-filters input[type="number"] {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.advanced-filters select:focus,
+.advanced-filters input[type="number"]:focus {
+  outline: none;
+  border-color: #667eea;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.advanced-filters input::-webkit-inner-spin-button,
+.advanced-filters input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.advanced-filters .filter-actions {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Toggle filter button active state */
+#toggleFilterPanel.active {
+  background: #667eea;
+  color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .advanced-filters .filter-row {
+    flex-direction: column;
+  }
+  .advanced-filters {
+    padding: 1rem;
+  }
+}
+
+/* Custom select look */
+.select-multi,
+.select-status,
+.select {
+  appearance: none;
+  background-color: #f9fafb;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 20 20' fill='%23374151'%3E%3Cpath d='M5.516 7.548a.75.75 0 0 1 1.06-.032L10 10.721l3.424-3.205a.75.75 0 0 1 1.028 1.093l-3.93 3.676a.75.75 0 0 1-1.028 0L5.548 8.609a.75.75 0 0 1-.032-1.06z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 14px 14px;
+  cursor: pointer;
+}
+
+.select-multi:focus,
+.select-status:focus,
+.select:focus {
+  border-color: #667eea;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Multi select height */
+.select-multi {
+  min-height: 100px;
+}
+
+/* Price range styling */
+.price-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.price-range input {
+  width: 90px;
+  text-align: right;
+}
+.price-range .dash {
+  color: #6b7280;
+}
+
+/* Status select colors */
+.select-status option[value="available"] {
+  background-color: #d1fae5;
+}
+.select-status option[value="low-stock"] {
+  background-color: #fef3c7;
+}
+.select-status option[value="out-of-stock"] {
+  background-color: #fee2e2;
+}

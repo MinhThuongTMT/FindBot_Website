@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -554,8 +555,59 @@
                             <button class="voice-search-btn" id="voiceSearchBtn" title="Tìm kiếm bằng giọng nói">
                                 <i class="fas fa-microphone"></i>
                             </button>
+                            <!-- Nút mở bộ lọc nâng cao -->
+                            <button class="btn btn-secondary" id="toggleFilterPanel" style="margin-left: 0.5rem;">
+                                <i class="fas fa-sliders-h"></i>
+                            </button>
                         </div>
                         <div class="search-suggestions" id="searchSuggestions"></div>
+                    </div>
+
+                    <!-- Bộ lọc nâng cao -->
+                    <div class="advanced-filters" id="advancedFilters" style="display: none; margin-top: 1rem; background: #f9fafb; padding: 1rem; border-radius: 0.5rem;">
+                        <div class="filter-row" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <div class="filter-group">
+                                <label>Danh mục</label>
+                                <select id="filterCategory" multiple class="select-multi" style="min-width: 160px;">
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Kệ</label>
+                                <select id="filterShelf" multiple class="select-multi" style="min-width: 120px;">
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label>Trạng thái</label>
+                                <select id="filterStatus" class="select-status" style="min-width: 140px;">
+                                    <option value="">Tất cả</option>
+                                    <option value="available">Còn hàng</option>
+                                    <option value="low-stock">Sắp hết</option>
+                                    <option value="out-of-stock">Hết hàng</option>
+                                </select>
+                            </div>
+                            <div class="filter-group price-range-group">
+                                <label>Giá (VNĐ)</label>
+                                <div class="price-range">
+                                    <input type="number" id="filterPriceMin" placeholder="Từ" min="0">
+                                    <span class="dash">-</span>
+                                    <input type="number" id="filterPriceMax" placeholder="Đến" min="0">
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <label>Sắp xếp</label>
+                                <select id="sortOption" class="select" style="min-width: 180px;">
+                                    <option value="">Mặc định</option>
+                                    <option value="price_asc">Giá ↑</option>
+                                    <option value="price_desc">Giá ↓</option>
+                                    <option value="quantity_asc">SL ↑</option>
+                                    <option value="quantity_desc">SL ↓</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                            <button class="btn btn-secondary" id="clearFiltersBtn"><i class="fas fa-eraser"></i> Xóa lọc</button>
+                            <button class="btn btn-primary" id="applyFiltersBtn"><i class="fas fa-check"></i> Áp dụng</button>
+                        </div>
                     </div>
 
                     <!-- Search Results -->
@@ -594,6 +646,10 @@
                     <div class="analytics-card">
                         <h3>Tỷ Lệ Lấp Đầy Kệ Hàng</h3>
                         <canvas id="shelfChart"></canvas>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Trạng Thái Kho</h3>
+                        <canvas id="stockChart"></canvas>
                     </div>
                 </div>
             </div>

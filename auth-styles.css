@@ -827,3 +827,8 @@
     }
   }
   
+  /* Hide non-active auth cards so the active one stays perfectly centered */
+  .auth-card:not(.active) {
+    display: none;
+  }
+  

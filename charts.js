@@ -1,93 +1,85 @@
 import { Chart } from "@/components/ui/chart"
-// Charts and Analytics System
-const products = [] // Declare products variable
-const PRODUCT_CATEGORIES = {} // Declare PRODUCT_CATEGORIES variable
+// Charts System sử dụng Chart.js CDN đã load trong index.html
+// Lấy dữ liệu trực tiếp từ biến toàn cục `products` và `PRODUCT_CATEGORIES` khai báo trong script.js
 
 class ChartsSystem {
   constructor() {
     this.charts = {}
-    this.chartColors = {
-      primary: "#667eea",
-      secondary: "#764ba2",
-      success: "#10b981",
-      warning: "#f59e0b",
-      danger: "#ef4444",
-      info: "#3b82f6",
-      light: "#f8fafc",
-      dark: "#1e293b",
+    this.chartData = {
+      categories: [],
+      shelves: [],
+      stock: [],
     }
     this.init()
   }
 
   init() {
-    // Initialize charts when analytics tab is shown
-    document.addEventListener("DOMContentLoaded", () => {
-      this.setupChartEventListeners()
-    })
-  }
-
-  setupChartEventListeners() {
-    // Listen for tab changes
-    const navItems = document.querySelectorAll(".nav-item")
-    navItems.forEach((item) => {
-      item.addEventListener("click", () => {
-        if (item.dataset.tab === "analytics") {
-          setTimeout(() => this.initializeAllCharts(), 100)
-        }
-      })
-    })
-
-    // Refresh charts button
-    this.addRefreshButton()
-  }
-
-  addRefreshButton() {
-    const analyticsHeader = document.querySelector(".analytics-header")
-    if (analyticsHeader) {
-      const refreshBtn = document.createElement("button")
-      refreshBtn.className = "btn btn-secondary"
-      refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Làm mới biểu đồ'
-      refreshBtn.addEventListener("click", () => {
-        this.destroyCharts()
-        setTimeout(() => this.initializeAllCharts(), 100)
-      })
-      analyticsHeader.appendChild(refreshBtn)
-    }
-  }
-
-  initializeAllCharts() {
+    this.prepareData()
     this.createCategoryChart()
-    this.createShelfOccupancyChart()
-    this.createProductStatusChart()
-    this.createPriceDistributionChart()
-    this.createInventoryTrendChart()
-    this.createTopProductsChart()
+    this.createShelfChart()
+    this.createStockChart()
+    this.updateDashboardStats()
+  }
+
+  prepareData() {
+    const allProducts = window.products || []
+    const categoriesMap = new Map()
+    const shelvesMap = new Map()
+    const stockMap = { available: 0, "low-stock": 0, "out-of-stock": 0 }
+
+    allProducts.forEach((p) => {
+      // Category count
+      const catEntry = categoriesMap.get(p.category) || 0
+      categoriesMap.set(p.category, catEntry + 1)
+
+      // Shelf count via PRODUCT_CATEGORIES
+      const catInfo = window.PRODUCT_CATEGORIES ? window.PRODUCT_CATEGORIES[p.category] : null
+      const shelfId = catInfo ? catInfo.shelf_id : "Khác"
+      const shelfKey = `Kệ ${shelfId}`
+      shelvesMap.set(shelfKey, (shelvesMap.get(shelfKey) || 0) + 1)
+
+      // Stock status
+      stockMap[p.status] = (stockMap[p.status] || 0) + 1
+    })
+
+    // Build categories array
+    const palette = ["#667eea", "#764ba2", "#f093fb", "#f5576c", "#4facfe", "#00f2fe", "#43e97b", "#8b5cf6"]
+    let colorIdx = 0
+    this.chartData.categories = Array.from(categoriesMap.entries()).map(([key, count]) => {
+      const catInfo = window.PRODUCT_CATEGORIES ? window.PRODUCT_CATEGORIES[key] : null
+      const color = catInfo?.color ? `rgb(${catInfo.color.join(",")})` : palette[colorIdx++ % palette.length]
+      return { name: catInfo ? catInfo.name : key, value: count, color }
+    })
+
+    // Shelves
+    const maxCount = Math.max(...shelvesMap.values(), 1)
+    this.chartData.shelves = Array.from(shelvesMap.entries()).map(([name, count]) => {
+      const occupancy = Math.round((count / maxCount) * 100)
+      return { name, occupancy, capacity: maxCount }
+    })
+
+    // Stock status
+    this.chartData.stock = [
+      { name: "Có sẵn", key: "available", value: stockMap["available"], color: "#10b981" },
+      { name: "Sắp hết", key: "low-stock", value: stockMap["low-stock"], color: "#f59e0b" },
+      { name: "Hết hàng", key: "out-of-stock", value: stockMap["out-of-stock"], color: "#ef4444" },
+    ]
   }
 
   createCategoryChart() {
     const ctx = document.getElementById("categoryChart")
     if (!ctx) return
 
-    // Destroy existing chart
-    if (this.charts.categoryChart) {
-      this.charts.categoryChart.destroy()
-    }
-
-    // Calculate category data
-    const categoryData = this.getCategoryData()
-
-    this.charts.categoryChart = new Chart(ctx, {
+    this.charts.category = new Chart(ctx, {
       type: "doughnut",
       data: {
-        labels: categoryData.labels,
+        labels: this.chartData.categories.map((cat) => cat.name),
         datasets: [
           {
-            data: categoryData.data,
-            backgroundColor: categoryData.colors,
-            borderWidth: 3,
-            borderColor: "#ffffff",
-            hoverBorderWidth: 5,
-            hoverBorderColor: "#ffffff",
+            data: this.chartData.categories.map((cat) => cat.value),
+            backgroundColor: this.chartData.categories.map((cat) => cat.color),
+            borderWidth: 0,
+            hoverOffset: 10,
           },
         ],
       },
@@ -102,82 +94,44 @@ class ChartsSystem {
               usePointStyle: true,
               font: {
                 size: 12,
-                family: "Inter",
-              },
-              generateLabels: (chart) => {
-                const data = chart.data
-                if (data.labels.length && data.datasets.length) {
-                  return data.labels.map((label, i) => {
-                    const value = data.datasets[0].data[i]
-                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0)
-                    const percentage = ((value / total) * 100).toFixed(1)
-                    return {
-                      text: `${label} (${percentage}%)`,
-                      fillStyle: data.datasets[0].backgroundColor[i],
-                      strokeStyle: data.datasets[0].borderColor,
-                      lineWidth: data.datasets[0].borderWidth,
-                      pointStyle: "circle",
-                      hidden: false,
-                      index: i,
-                    }
-                  })
-                }
-                return []
               },
             },
           },
           tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            titleColor: "#ffffff",
-            bodyColor: "#ffffff",
-            borderColor: "#667eea",
-            borderWidth: 1,
-            cornerRadius: 8,
-            displayColors: true,
             callbacks: {
               label: (context) => {
                 const label = context.label || ""
                 const value = context.parsed
                 const total = context.dataset.data.reduce((a, b) => a + b, 0)
                 const percentage = ((value / total) * 100).toFixed(1)
-                return `${label}: ${value} sản phẩm (${percentage}%)`
+                return `${label}: ${value}% (${percentage}%)`
               },
             },
           },
         },
         animation: {
           animateRotate: true,
-          animateScale: true,
-          duration: 1000,
-          easing: "easeOutQuart",
+          duration: 2000,
         },
-        cutout: "60%",
       },
     })
   }
 
-  createShelfOccupancyChart() {
+  createShelfChart() {
     const ctx = document.getElementById("shelfChart")
     if (!ctx) return
 
-    // Destroy existing chart
-    if (this.charts.shelfChart) {
-      this.charts.shelfChart.destroy()
-    }
-
-    const shelfData = this.getShelfOccupancyData()
-
-    this.charts.shelfChart = new Chart(ctx, {
+    this.charts.shelf = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: shelfData.labels,
+        labels: this.chartData.shelves.map((shelf) => shelf.name),
         datasets: [
           {
-            label: "Số lượng sản phẩm",
-            data: shelfData.data,
-            backgroundColor: this.createGradient(ctx, this.chartColors.primary, this.chartColors.secondary),
-            borderColor: this.chartColors.primary,
-            borderWidth: 2,
+            label: "Tỷ lệ lấp đầy (%)",
+            data: this.chartData.shelves.map((shelf) => shelf.occupancy),
+            backgroundColor: "rgba(102, 126, 234, 0.8)",
+            borderColor: "rgba(102, 126, 234, 1)",
+            borderWidth: 1,
             borderRadius: 8,
             borderSkipped: false,
           },
@@ -191,98 +145,50 @@ class ChartsSystem {
             display: false,
           },
           tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            titleColor: "#ffffff",
-            bodyColor: "#ffffff",
-            borderColor: "#667eea",
-            borderWidth: 1,
-            cornerRadius: 8,
             callbacks: {
-              title: (context) => `Kệ ${context[0].label}`,
-              label: (context) => `Số sản phẩm: ${context.parsed.y}`,
+              label: (context) => `Lấp đầy: ${context.parsed.y}%`,
             },
           },
         },
         scales: {
           y: {
             beginAtZero: true,
+            max: 100,
             ticks: {
-              stepSize: 1,
-              color: "#64748b",
-              font: {
-                family: "Inter",
-              },
+              callback: (value) => value + "%",
             },
             grid: {
               color: "rgba(0, 0, 0, 0.1)",
-              drawBorder: false,
             },
           },
           x: {
-            ticks: {
-              color: "#64748b",
-              font: {
-                family: "Inter",
-              },
-            },
             grid: {
               display: false,
             },
           },
         },
         animation: {
-          duration: 1000,
-          easing: "easeOutQuart",
+          duration: 2000,
+          easing: "easeInOutQuart",
         },
       },
     })
   }
 
-  createProductStatusChart() {
-    // Add this chart to analytics section
-    const analyticsGrid = document.querySelector(".analytics-grid")
-    if (!analyticsGrid) return
-
-    // Check if chart container already exists
-    let statusChartContainer = document.getElementById("statusChartContainer")
-    if (!statusChartContainer) {
-      statusChartContainer = document.createElement("div")
-      statusChartContainer.id = "statusChartContainer"
-      statusChartContainer.className = "analytics-card"
-      statusChartContainer.innerHTML = `
-        <h3>Trạng Thái Sản Phẩm</h3>
-        <div class="chart-container">
-          <canvas id="statusChart"></canvas>
-        </div>
-      `
-      analyticsGrid.appendChild(statusChartContainer)
-    }
-
-    const ctx = document.getElementById("statusChart")
+  createStockChart() {
+    const ctx = document.getElementById("stockChart")
     if (!ctx) return
 
-    // Destroy existing chart
-    if (this.charts.statusChart) {
-      this.charts.statusChart.destroy()
-    }
-
-    const statusData = this.getProductStatusData()
-
-    this.charts.statusChart = new Chart(ctx, {
-      type: "pie",
+    this.charts.stock = new Chart(ctx, {
+      type: "doughnut",
       data: {
-        labels: statusData.labels,
+        labels: this.chartData.stock.map((s) => s.name),
         datasets: [
           {
-            data: statusData.data,
-            backgroundColor: [
-              this.chartColors.success, // Available - Green
-              this.chartColors.warning, // Low Stock - Yellow
-              this.chartColors.danger, // Out of Stock - Red
-            ],
-            borderColor: ["#ffffff", "#ffffff", "#ffffff"],
-            borderWidth: 3,
-            hoverBorderWidth: 5,
+            data: this.chartData.stock.map((s) => s.value),
+            backgroundColor: this.chartData.stock.map((s) => s.color),
+            borderWidth: 0,
+            hoverOffset: 8,
           },
         ],
       },
@@ -295,638 +201,120 @@ class ChartsSystem {
             labels: {
               padding: 20,
               usePointStyle: true,
-              font: {
-                family: "Inter",
-              },
+              font: { size: 12 },
             },
           },
           tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            titleColor: "#ffffff",
-            bodyColor: "#ffffff",
-            borderColor: "#667eea",
-            borderWidth: 1,
-            cornerRadius: 8,
             callbacks: {
-              label: (context) => {
-                const label = context.label || ""
-                const value = context.parsed
-                const total = context.dataset.data.reduce((a, b) => a + b, 0)
-                const percentage = ((value / total) * 100).toFixed(1)
-                return `${label}: ${value} (${percentage}%)`
-              },
+              label: (ctx) => `${ctx.label}: ${ctx.parsed} sản phẩm`,
             },
           },
         },
-        animation: {
-          animateRotate: true,
-          duration: 1000,
-          easing: "easeOutQuart",
-        },
+        animation: { animateRotate: true, duration: 1800 },
       },
     })
   }
 
-  createPriceDistributionChart() {
-    // Add this chart to analytics section
-    const analyticsGrid = document.querySelector(".analytics-grid")
-    if (!analyticsGrid) return
-
-    // Check if chart container already exists
-    let priceChartContainer = document.getElementById("priceChartContainer")
-    if (!priceChartContainer) {
-      priceChartContainer = document.createElement("div")
-      priceChartContainer.id = "priceChartContainer"
-      priceChartContainer.className = "analytics-card"
-      priceChartContainer.innerHTML = `
-        <h3>Phân Bố Giá Sản Phẩm</h3>
-        <div class="chart-container">
-          <canvas id="priceChart"></canvas>
+  updateDashboardStats() {
+    // Update popular categories
+    const popularCategoriesEl = document.getElementById("popularCategories")
+    if (popularCategoriesEl) {
+      const topCategories = this.chartData.categories
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5)
+        .map(
+          (cat, index) => `
+        <div class="category-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: ${cat.color};"></div>
+            <span style="font-weight: 500; color: #374151;">${cat.name}</span>
+          </div>
+          <span style="font-weight: 600; color: #667eea;">${cat.value}%</span>
         </div>
-      `
-      analyticsGrid.appendChild(priceChartContainer)
+      `,
+        )
+        .join("")
+
+      popularCategoriesEl.innerHTML = topCategories
     }
 
-    const ctx = document.getElementById("priceChart")
-    if (!ctx) return
-
-    // Destroy existing chart
-    if (this.charts.priceChart) {
-      this.charts.priceChart.destroy()
-    }
-
-    const priceData = this.getPriceDistributionData()
-
-    this.charts.priceChart = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: priceData.labels,
-        datasets: [
-          {
-            label: "Số lượng sản phẩm",
-            data: priceData.data,
-            borderColor: this.chartColors.primary,
-            backgroundColor: this.createGradient(ctx, this.chartColors.primary, "transparent", 0.1),
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: this.chartColors.primary,
-            pointBorderColor: "#ffffff",
-            pointBorderWidth: 3,
-            pointRadius: 6,
-            pointHoverRadius: 8,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false,
-          },
-          tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            titleColor: "#ffffff",
-            bodyColor: "#ffffff",
-            borderColor: "#667eea",
-            borderWidth: 1,
-            cornerRadius: 8,
-          },
+    // Update recent activity
+    const recentActivityEl = document.getElementById("recentActivity")
+    if (recentActivityEl) {
+      const activities = [
+        {
+          action: "Thêm sản phẩm mới",
+          item: "Sữa tươi Vinamilk",
+          time: "5 phút trước",
+          icon: "fas fa-plus",
+          color: "#10b981",
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              stepSize: 1,
-              color: "#64748b",
-              font: {
-                family: "Inter",
-              },
-            },
-            grid: {
-              color: "rgba(0, 0, 0, 0.1)",
-              drawBorder: false,
-            },
-          },
-          x: {
-            title: {
-              display: true,
-              text: "Khoảng giá (VNĐ)",
-              color: "#64748b",
-              font: {
-                family: "Inter",
-                weight: "500",
-              },
-            },
-            ticks: {
-              color: "#64748b",
-              font: {
-                family: "Inter",
-              },
-            },
-            grid: {
-              display: false,
-            },
-          },
+        {
+          action: "Cập nhật giá",
+          item: "Bánh mì sandwich",
+          time: "15 phút trước",
+          icon: "fas fa-edit",
+          color: "#f59e0b",
         },
-        interaction: {
-          intersect: false,
-          mode: "index",
+        {
+          action: "Xóa sản phẩm",
+          item: "Nước ngọt hết hạn",
+          time: "1 giờ trước",
+          icon: "fas fa-trash",
+          color: "#ef4444",
         },
-        animation: {
-          duration: 1000,
-          easing: "easeOutQuart",
+        {
+          action: "Thêm danh mục",
+          item: "Đồ chơi trẻ em",
+          time: "2 giờ trước",
+          icon: "fas fa-folder-plus",
+          color: "#8b5cf6",
         },
-      },
-    })
-  }
+      ]
 
-  createInventoryTrendChart() {
-    // Add this chart to analytics section
-    const analyticsGrid = document.querySelector(".analytics-grid")
-    if (!analyticsGrid) return
-
-    // Check if chart container already exists
-    let trendChartContainer = document.getElementById("trendChartContainer")
-    if (!trendChartContainer) {
-      trendChartContainer = document.createElement("div")
-      trendChartContainer.id = "trendChartContainer"
-      trendChartContainer.className = "analytics-card"
-      trendChartContainer.innerHTML = `
-        <h3>Xu Hướng Tồn Kho</h3>
-        <div class="chart-container">
-          <canvas id="trendChart"></canvas>
+      const activitiesHtml = activities
+        .map(
+          (activity) => `
+        <div class="activity-item" style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: ${activity.color}20; display: flex; align-items: center; justify-content: center;">
+            <i class="${activity.icon}" style="color: ${activity.color}; font-size: 0.875rem;"></i>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-weight: 500; color: #374151; margin-bottom: 0.25rem;">${activity.action}</div>
+            <div style="font-size: 0.875rem; color: #6b7280;">${activity.item}</div>
+          </div>
+          <div style="font-size: 0.75rem; color: #9ca3af;">${activity.time}</div>
         </div>
-      `
-      analyticsGrid.appendChild(trendChartContainer)
-    }
+      `,
+        )
+        .join("")
 
-    const ctx = document.getElementById("trendChart")
-    if (!ctx) return
-
-    // Destroy existing chart
-    if (this.charts.trendChart) {
-      this.charts.trendChart.destroy()
-    }
-
-    const trendData = this.getInventoryTrendData()
-
-    this.charts.trendChart = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: trendData.labels,
-        datasets: [
-          {
-            label: "Tổng sản phẩm",
-            data: trendData.totalProducts,
-            borderColor: this.chartColors.primary,
-            backgroundColor: this.chartColors.primary + "20",
-            borderWidth: 3,
-            fill: false,
-            tension: 0.4,
-            pointRadius: 5,
-          },
-          {
-            label: "Sản phẩm có sẵn",
-            data: trendData.availableProducts,
-            borderColor: this.chartColors.success,
-            backgroundColor: this.chartColors.success + "20",
-            borderWidth: 3,
-            fill: false,
-            tension: 0.4,
-            pointRadius: 5,
-          },
-          {
-            label: "Sản phẩm sắp hết",
-            data: trendData.lowStockProducts,
-            borderColor: this.chartColors.warning,
-            backgroundColor: this.chartColors.warning + "20",
-            borderWidth: 3,
-            fill: false,
-            tension: 0.4,
-            pointRadius: 5,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: "top",
-            labels: {
-              usePointStyle: true,
-              font: {
-                family: "Inter",
-              },
-            },
-          },
-          tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            titleColor: "#ffffff",
-            bodyColor: "#ffffff",
-            borderColor: "#667eea",
-            borderWidth: 1,
-            cornerRadius: 8,
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              color: "#64748b",
-              font: {
-                family: "Inter",
-              },
-            },
-            grid: {
-              color: "rgba(0, 0, 0, 0.1)",
-              drawBorder: false,
-            },
-          },
-          x: {
-            ticks: {
-              color: "#64748b",
-              font: {
-                family: "Inter",
-              },
-            },
-            grid: {
-              display: false,
-            },
-          },
-        },
-        animation: {
-          duration: 1000,
-          easing: "easeOutQuart",
-        },
-      },
-    })
-  }
-
-  createTopProductsChart() {
-    // Add this chart to analytics section
-    const analyticsGrid = document.querySelector(".analytics-grid")
-    if (!analyticsGrid) return
-
-    // Check if chart container already exists
-    let topProductsContainer = document.getElementById("topProductsContainer")
-    if (!topProductsContainer) {
-      topProductsContainer = document.createElement("div")
-      topProductsContainer.id = "topProductsContainer"
-      topProductsContainer.className = "analytics-card"
-      topProductsContainer.innerHTML = `
-        <h3>Top Sản Phẩm Theo Số Lượng</h3>
-        <div class="chart-container">
-          <canvas id="topProductsChart"></canvas>
-        </div>
-      `
-      analyticsGrid.appendChild(topProductsContainer)
-    }
-
-    const ctx = document.getElementById("topProductsChart")
-    if (!ctx) return
-
-    // Destroy existing chart
-    if (this.charts.topProductsChart) {
-      this.charts.topProductsChart.destroy()
-    }
-
-    const topProductsData = this.getTopProductsData()
-
-    this.charts.topProductsChart = new Chart(ctx, {
-      type: "horizontalBar",
-      data: {
-        labels: topProductsData.labels,
-        datasets: [
-          {
-            label: "Số lượng",
-            data: topProductsData.data,
-            backgroundColor: this.createGradient(ctx, this.chartColors.info, this.chartColors.primary),
-            borderColor: this.chartColors.info,
-            borderWidth: 2,
-            borderRadius: 6,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: "y",
-        plugins: {
-          legend: {
-            display: false,
-          },
-          tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            titleColor: "#ffffff",
-            bodyColor: "#ffffff",
-            borderColor: "#667eea",
-            borderWidth: 1,
-            cornerRadius: 8,
-          },
-        },
-        scales: {
-          x: {
-            beginAtZero: true,
-            ticks: {
-              color: "#64748b",
-              font: {
-                family: "Inter",
-              },
-            },
-            grid: {
-              color: "rgba(0, 0, 0, 0.1)",
-              drawBorder: false,
-            },
-          },
-          y: {
-            ticks: {
-              color: "#64748b",
-              font: {
-                family: "Inter",
-                size: 11,
-              },
-            },
-            grid: {
-              display: false,
-            },
-          },
-        },
-        animation: {
-          duration: 1000,
-          easing: "easeOutQuart",
-        },
-      },
-    })
-  }
-
-  // Data calculation methods
-  getCategoryData() {
-    const categoryCount = {}
-    const categoryColors = {}
-
-    // Count products by category
-    products.forEach((product) => {
-      const category = PRODUCT_CATEGORIES[product.category]
-      if (category) {
-        categoryCount[category.name] = (categoryCount[category.name] || 0) + 1
-        if (!categoryColors[category.name]) {
-          const [r, g, b] = category.color
-          categoryColors[category.name] = `rgba(${r}, ${g}, ${b}, 0.8)`
-        }
-      }
-    })
-
-    return {
-      labels: Object.keys(categoryCount),
-      data: Object.values(categoryCount),
-      colors: Object.keys(categoryCount).map((name) => categoryColors[name]),
+      recentActivityEl.innerHTML = activitiesHtml
     }
   }
 
-  getShelfOccupancyData() {
-    const shelfCount = {}
-
-    // Count products by shelf
-    products.forEach((product) => {
-      const category = PRODUCT_CATEGORIES[product.category]
-      if (category) {
-        const shelfId = category.shelf_id
-        shelfCount[shelfId] = (shelfCount[shelfId] || 0) + 1
-      }
-    })
-
-    // Sort by shelf ID
-    const sortedShelves = Object.keys(shelfCount).sort((a, b) => Number.parseInt(a) - Number.parseInt(b))
-
-    return {
-      labels: sortedShelves,
-      data: sortedShelves.map((shelfId) => shelfCount[shelfId]),
+  updateChartData(chartType, newData) {
+    if (this.charts[chartType]) {
+      this.charts[chartType].data = newData
+      this.charts[chartType].update()
     }
   }
 
-  getProductStatusData() {
-    const statusCount = {
-      "Có sẵn": 0,
-      "Sắp hết": 0,
-      "Hết hàng": 0,
-    }
-
-    products.forEach((product) => {
-      switch (product.status) {
-        case "available":
-          statusCount["Có sẵn"]++
-          break
-        case "low_stock":
-          statusCount["Sắp hết"]++
-          break
-        case "out_of_stock":
-          statusCount["Hết hàng"]++
-          break
-      }
-    })
-
-    return {
-      labels: Object.keys(statusCount),
-      data: Object.values(statusCount),
-    }
-  }
-
-  getPriceDistributionData() {
-    const priceRanges = {
-      "0-50K": 0,
-      "50K-100K": 0,
-      "100K-200K": 0,
-      "200K-500K": 0,
-      "500K+": 0,
-    }
-
-    products.forEach((product) => {
-      const price = product.price
-      if (price < 50000) {
-        priceRanges["0-50K"]++
-      } else if (price < 100000) {
-        priceRanges["50K-100K"]++
-      } else if (price < 200000) {
-        priceRanges["100K-200K"]++
-      } else if (price < 500000) {
-        priceRanges["200K-500K"]++
-      } else {
-        priceRanges["500K+"]++
-      }
-    })
-
-    return {
-      labels: Object.keys(priceRanges),
-      data: Object.values(priceRanges),
-    }
-  }
-
-  getInventoryTrendData() {
-    // Generate mock trend data for the last 7 days
-    const labels = []
-    const totalProducts = []
-    const availableProducts = []
-    const lowStockProducts = []
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date()
-      date.setDate(date.getDate() - i)
-      labels.push(date.toLocaleDateString("vi-VN", { month: "short", day: "numeric" }))
-
-      // Mock data with some variation
-      const total = products.length + Math.floor(Math.random() * 10) - 5
-      const available = products.filter((p) => p.status === "available").length + Math.floor(Math.random() * 5) - 2
-      const lowStock = products.filter((p) => p.status === "low_stock").length + Math.floor(Math.random() * 3) - 1
-
-      totalProducts.push(Math.max(0, total))
-      availableProducts.push(Math.max(0, available))
-      lowStockProducts.push(Math.max(0, lowStock))
-    }
-
-    return {
-      labels,
-      totalProducts,
-      availableProducts,
-      lowStockProducts,
-    }
-  }
-
-  getTopProductsData() {
-    // Get top 5 products by quantity
-    const sortedProducts = [...products]
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 5)
-      .reverse() // Reverse for horizontal bar chart
-
-    return {
-      labels: sortedProducts.map((p) => (p.name.length > 20 ? p.name.substring(0, 20) + "..." : p.name)),
-      data: sortedProducts.map((p) => p.quantity),
-    }
-  }
-
-  // Utility methods
-  createGradient(ctx, color1, color2, opacity = 1) {
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400)
-    gradient.addColorStop(
-      0,
-      color1 +
-        Math.floor(opacity * 255)
-          .toString(16)
-          .padStart(2, "0"),
-    )
-    gradient.addColorStop(
-      1,
-      color2 +
-        Math.floor(opacity * 255)
-          .toString(16)
-          .padStart(2, "0"),
-    )
-    return gradient
-  }
-
-  updateCharts() {
-    // Update all charts with new data
+  refreshCharts() {
     Object.values(this.charts).forEach((chart) => {
-      if (chart && typeof chart.update === "function") {
-        chart.update()
-      }
+      chart.update()
     })
   }
 
   destroyCharts() {
     Object.values(this.charts).forEach((chart) => {
-      if (chart && typeof chart.destroy === "function") {
-        chart.destroy()
-      }
+      chart.destroy()
     })
     this.charts = {}
   }
-
-  // Export chart data
-  exportChartData() {
-    const data = {
-      categories: this.getCategoryData(),
-      shelves: this.getShelfOccupancyData(),
-      status: this.getProductStatusData(),
-      prices: this.getPriceDistributionData(),
-      trends: this.getInventoryTrendData(),
-      topProducts: this.getTopProductsData(),
-      exportDate: new Date().toISOString(),
-    }
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `supermarket-analytics-${new Date().toISOString().split("T")[0]}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  // Print charts
-  printCharts() {
-    const printWindow = window.open("", "_blank")
-    const chartsHtml = Array.from(document.querySelectorAll(".analytics-card"))
-      .map((card) => card.outerHTML)
-      .join("")
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Báo cáo thống kê - Findbot</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .analytics-card { margin-bottom: 30px; page-break-inside: avoid; }
-          h3 { color: #1e293b; margin-bottom: 15px; }
-          canvas { max-width: 100%; height: auto; }
-        </style>
-      </head>
-      <body>
-        <h1>Báo cáo thống kê - Findbot Supermarket</h1>
-        <p>Ngày xuất: ${new Date().toLocaleDateString("vi-VN")}</p>
-        ${chartsHtml}
-      </body>
-      </html>
-    `)
-
-    printWindow.document.close()
-    setTimeout(() => {
-      printWindow.print()
-      printWindow.close()
-    }, 1000)
-  }
 }
 
-// Initialize charts system
-const chartsSystem = new ChartsSystem()
-
-// Add export and print buttons to analytics header
+// Initialize charts when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  const analyticsHeader = document.querySelector(".analytics-header")
-  if (analyticsHeader) {
-    const buttonGroup = document.createElement("div")
-    buttonGroup.className = "analytics-actions"
-    buttonGroup.style.display = "flex"
-    buttonGroup.style.gap = "0.5rem"
-
-    const exportBtn = document.createElement("button")
-    exportBtn.className = "btn btn-outline"
-    exportBtn.innerHTML = '<i class="fas fa-download"></i> Xuất dữ liệu'
-    exportBtn.addEventListener("click", () => chartsSystem.exportChartData())
-
-    const printBtn = document.createElement("button")
-    printBtn.className = "btn btn-outline"
-    printBtn.innerHTML = '<i class="fas fa-print"></i> In báo cáo'
-    printBtn.addEventListener("click", () => chartsSystem.printCharts())
-
-    buttonGroup.appendChild(exportBtn)
-    buttonGroup.appendChild(printBtn)
-    analyticsHeader.appendChild(buttonGroup)
-  }
+  window.ChartsSystem = new ChartsSystem()
 })

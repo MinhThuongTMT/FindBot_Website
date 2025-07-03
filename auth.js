@@ -1061,10 +1061,7 @@ class AuthenticationSystem {
     // Start session timer
     this.startSessionTimer()
 
-    // Initialize app if needed
-    if (window.SupermarketApp) {
-      window.SupermarketApp.init()
-    }
+    // Hiển thị giao diện chính đã sẵn sàng (các hệ thống con đã được khởi tạo khi tải trang)
   }
 
   updateUserInterface() {
