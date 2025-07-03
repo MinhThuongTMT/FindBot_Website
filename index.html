@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Findbot - Quản Lý Siêu Thị AI Challenge 2025</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="auth-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <i class="fas fa-robot"></i>
+                <h1>Findbot</h1>
+                <p>AI Challenge 2025</p>
+            </div>
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <div class="loading-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="loading-text" id="loadingText">Đang khởi tạo hệ thống...</p>
+                <p class="loading-percentage" id="loadingPercentage">0%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authentication Container -->
+    <div class="auth-container" id="authContainer" style="display: none;">
+        <!-- Login Form -->
+        <div class="auth-card login-card active" id="loginCard">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-robot"></i>
+                    <h2>Findbot</h2>
+                    <p>Quản Lý Siêu Thị Thông Minh</p>
+                </div>
+            </div>
+
+            <div class="auth-body">
+                <h3>Đăng Nhập</h3>
+                <p class="auth-subtitle">Chào mừng bạn trở lại! Vui lòng đăng nhập để tiếp tục.</p>
+
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="loginEmail">Email hoặc Tên đăng nhập</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="loginEmail" name="email" required 
+                                   placeholder="Nhập email hoặc tên đăng nhập">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword">Mật khẩu</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="loginPassword" name="password" required 
+                                   placeholder="Nhập mật khẩu">
+                            <button type="button" class="password-toggle" data-target="loginPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="rememberMe" name="remember">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-text">Ghi nhớ đăng nhập</span>
+                        </label>
+                        <a href="#" class="forgot-password" id="forgotPasswordLink">Quên mật khẩu?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+                        <span class="btn-text">Đăng Nhập</span>
+                        <div class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </button>
+                </form>
+
+                <div class="auth-divider">
+                    <span>hoặc</span>
+                </div>
+
+                <button class="btn btn-demo" id="demoAccountsBtn">
+                    <i class="fas fa-info-circle"></i>
+                    Xem Tài Khoản Demo
+                </button>
+
+                <div class="auth-footer">
+                    <p>Chưa có tài khoản? 
+                        <a href="#" id="showRegisterForm">Đăng ký ngay</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Form -->
+        <div class="auth-card register-card" id="registerCard">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-robot"></i>
+                    <h2>Findbot</h2>
+                    <p>Tạo Tài Khoản Mới</p>
+                </div>
+            </div>
+
+            <div class="auth-body">
+                <h3>Đăng Ký</h3>
+                <p class="auth-subtitle">Tạo tài khoản để bắt đầu sử dụng hệ thống quản lý siêu thị.</p>
+
+                <form id="registerForm" class="auth-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="registerFirstName">Họ</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="registerFirstName" name="firstName" required 
+                                       placeholder="Nhập họ">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerLastName">Tên</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="registerLastName" name="lastName" required 
+                                       placeholder="Nhập tên">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" id="registerEmail" name="email" required 
+                                   placeholder="Nhập địa chỉ email">
+                        </div>
+                        <div class="field-validation" id="emailValidation"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerUsername">Tên đăng nhập</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-at input-icon"></i>
+                            <input type="text" id="registerUsername" name="username" required 
+                                   placeholder="Nhập tên đăng nhập">
+                        </div>
+                        <div class="field-validation" id="usernameValidation"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerPassword">Mật khẩu</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="registerPassword" name="password" required 
+                                   placeholder="Nhập mật khẩu">
+                            <button type="button" class="password-toggle" data-target="registerPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength" id="passwordStrength">
+                            <div class="strength-bar">
+                                <div class="strength-fill"></div>
+                            </div>
+                            <div class="strength-text">Độ mạnh mật khẩu</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Xác nhận mật khẩu</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required 
+                                   placeholder="Nhập lại mật khẩu">
+                            <button type="button" class="password-toggle" data-target="confirmPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="field-validation" id="confirmPasswordValidation"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerRole">Vai trò</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user-tag input-icon"></i>
+                            <select id="registerRole" name="role" required>
+                                <option value="">Chọn vai trò</option>
+                                <option value="staff">Nhân viên</option>
+                                <option value="viewer">Người xem</option>
+                            </select>
+                        </div>
+                        <small class="form-help">Vai trò quản lý chỉ được cấp bởi admin</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerPhone">Số điện thoại (tùy chọn)</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-phone input-icon"></i>
+                            <input type="tel" id="registerPhone" name="phone" 
+                                   placeholder="Nhập số điện thoại">
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
+                            <span class="checkmark"></span>
+                            <span class="checkbox-text">
+                                Tôi đồng ý với 
+                                <a href="#" id="termsLink">Điều khoản sử dụng</a> và 
+                                <a href="#" id="privacyLink">Chính sách bảo mật</a>
+                            </span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="registerBtn">
+                        <span class="btn-text">Tạo Tài Khoản</span>
+                        <div class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Đã có tài khoản? 
+                        <a href="#" id="showLoginForm">Đăng nhập</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Form -->
+        <div class="auth-card forgot-card" id="forgotCard">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-key"></i>
+                    <h2>Quên Mật Khẩu</h2>
+                    <p>Khôi phục tài khoản của bạn</p>
+                </div>
+            </div>
+
+            <div class="auth-body">
+                <h3>Đặt Lại Mật Khẩu</h3>
+                <p class="auth-subtitle">Nhập email của bạn để nhận hướng dẫn đặt lại mật khẩu.</p>
+
+                <form id="forgotForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="forgotEmail">Email</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-envelope input-icon"></i>
+                            <input type="email" id="forgotEmail" name="email" required 
+                                   placeholder="Nhập địa chỉ email">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="forgotBtn">
+                        <span class="btn-text">Gửi Hướng Dẫn</span>
+                        <div class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Nhớ lại mật khẩu? 
+                        <a href="#" id="backToLogin">Đăng nhập</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application (Hidden until authenticated) -->
+    <div class="app-container" id="appContainer" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <span>Findbot</span>
+                </div>
+                <p class="subtitle">AI Challenge 2025</p>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active" data-tab="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" data-tab="products">
+                    <i class="fas fa-box"></i>
+                    <span>Quản Lý Sản Phẩm</span>
+                </li>
+                <li class="nav-item" data-tab="map">
+                    <i class="fas fa-map"></i>
+                    <span>Bản Đồ Siêu Thị</span>
+                </li>
+                <li class="nav-item" data-tab="search">
+                    <i class="fas fa-search"></i>
+                    <span>Tìm Kiếm & Lọc</span>
+                </li>
+                <li class="nav-item" data-tab="analytics">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Thống Kê</span>
+                </li>
+                <li class="nav-item" data-tab="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Cài Đặt</span>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="user-info-sidebar">
+                    <img src="/placeholder.svg?height=40&width=40" alt="User" id="sidebarUserAvatar">
+                    <div class="user-details">
+                        <span id="sidebarUserName">User Name</span>
+                        <small id="sidebarUserRole">Role</small>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="page-title">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Tìm kiếm sản phẩm..." id="globalSearch">
+                    </div>
+                    <button class="notification-btn" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="notificationBadge">0</span>
+                    </button>
+                    <div class="user-profile" id="userProfile">
+                        <img src="/placeholder.svg?height=40&width=40" alt="User" id="userAvatar">
+                        <div class="user-info">
+                            <span id="userName">User Name</span>
+                            <small id="userRole">Role</small>
+                        </div>
+                        <div class="user-dropdown">
+                            <button class="dropdown-toggle" id="userDropdown">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="dropdown-menu" id="userDropdownMenu">
+                                <a href="#" id="profileBtn">
+                                    <i class="fas fa-user"></i> Hồ sơ
+                                </a>
+                                <a href="#" id="accountSettingsBtn">
+                                    <i class="fas fa-cog"></i> Cài đặt tài khoản
+                                </a>
+                                <a href="#" id="changePasswordBtn">
+                                    <i class="fas fa-key"></i> Đổi mật khẩu
+                                </a>
+                                <hr>
+                                <a href="#" id="logoutBtn">
+                                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Tab -->
+            <div class="tab-content active" id="dashboard">
+                <div class="welcome-section">
+                    <div class="welcome-content">
+                        <h2 id="welcomeMessage">Chào mừng trở lại!</h2>
+                        <p id="welcomeSubtext">Hôm nay là ngày tuyệt vời để quản lý siêu thị của bạn</p>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" id="quickAddProduct">
+                            <i class="fas fa-plus"></i>
+                            <span>Thêm sản phẩm</span>
+                        </button>
+                        <button class="quick-action-btn" id="quickViewMap">
+                            <i class="fas fa-map"></i>
+                            <span>Xem bản đồ</span>
+                        </button>
+                        <button class="quick-action-btn" id="quickSearch">
+                            <i class="fas fa-search"></i>
+                            <span>Tìm kiếm</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalProducts">0</h3>
+                            <p>Tổng Sản Phẩm</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalCategories">20</h3>
+                            <p>Danh Mục</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalShelves">20</h3>
+                            <p>Kệ Hàng</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="occupancyRate">85%</h3>
+                            <p>Tỷ Lệ Lấp Đầy</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>Danh Mục Phổ Biến</h3>
+                        <div class="category-list" id="popularCategories"></div>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>Hoạt Động Gần Đây</h3>
+                        <div class="activity-list" id="recentActivity"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div class="tab-content" id="products">
+                <div class="products-header">
+                    <h2>Quản Lý Sản Phẩm</h2>
+                    <button class="btn btn-primary" id="addProductBtn">
+                        <i class="fas fa-plus"></i>
+                        Thêm Sản Phẩm
+                    </button>
+                </div>
+
+                <div class="products-filters">
+                    <select id="categoryFilter">
+                        <option value="">Tất cả danh mục</option>
+                    </select>
+                    <select id="shelfFilter">
+                        <option value="">Tất cả kệ</option>
+                    </select>
+                    <input type="text" id="productSearch" placeholder="Tìm kiếm sản phẩm...">
+                </div>
+
+                <div class="products-table-container">
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên Sản Phẩm</th>
+                                <th>Danh Mục</th>
+                                <th>Kệ</th>
+                                <th>Vị Trí</th>
+                                <th>Giá</th>
+                                <th>Số Lượng</th>
+                                <th>Trạng Thái</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Map Tab -->
+            <div class="tab-content" id="map">
+                <div class="map-header">
+                    <h2>Bản Đồ Siêu Thị</h2>
+                    <div class="map-controls">
+                        <button class="btn btn-secondary" id="resetMapBtn">
+                            <i class="fas fa-refresh"></i>
+                            Reset
+                        </button>
+                        <button class="btn btn-secondary" id="toggleGridBtn">
+                            <i class="fas fa-th"></i>
+                            Lưới
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="map-container">
+                    <canvas id="supermarketMap" width="800" height="600"></canvas>
+                </div>
+                
+                <div class="map-legend">
+                    <h3>Chú Thích</h3>
+                    <div class="legend-grid" id="mapLegend"></div>
+                </div>
+            </div>
+
+            <!-- Search Tab -->
+            <div class="tab-content" id="search">
+                <div class="search-header">
+                    <div class="search-title-section">
+                        <h2>Tìm Kiếm & Lọc Nâng Cao</h2>
+                        <p class="search-subtitle">Tìm kiếm sản phẩm một cách nhanh chóng và chính xác</p>
+                    </div>
+                    <div class="search-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="searchResultCount">0</span>
+                            <span class="stat-label">Kết quả</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalSearchableProducts">0</span>
+                            <span class="stat-label">Tổng sản phẩm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="search-container">
+                    <!-- Quick Search Bar -->
+                    <div class="quick-search-section">
+                        <div class="quick-search-bar">
+                            <div class="search-input-wrapper">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="quickSearchInput" placeholder="Tìm kiếm nhanh sản phẩm..." class="quick-search-input">
+                                <button class="clear-search-btn" id="clearQuickSearch" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <button class="voice-search-btn" id="voiceSearchBtn" title="Tìm kiếm bằng giọng nói">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                        </div>
+                        <div class="search-suggestions" id="searchSuggestions"></div>
+                    </div>
+
+                    <!-- Search Results -->
+                    <div class="search-results-section">
+                        <div class="results-header" id="resultsHeader" style="display: none;">
+                            <div class="results-info">
+                                <h3 id="resultsTitle">Kết quả tìm kiếm</h3>
+                                <p id="resultsSubtitle">Tìm thấy 0 sản phẩm</p>
+                            </div>
+                        </div>
+
+                        <div class="search-results" id="searchResults">
+                            <div class="no-results" id="noResults">
+                                <div class="no-results-icon">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <h3>Bắt đầu tìm kiếm</h3>
+                                <p>Sử dụng thanh tìm kiếm để tìm sản phẩm</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div class="tab-content" id="analytics">
+                <div class="analytics-header">
+                    <h2>Thống Kê & Báo Cáo</h2>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>Phân Bố Sản Phẩm Theo Danh Mục</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Tỷ Lệ Lấp Đầy Kệ Hàng</h3>
+                        <canvas id="shelfChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings">
+                <div class="settings-header">
+                    <h2>Cài Đặt Hệ Thống</h2>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="settings-card">
+                        <h3>Cài Đặt Chung</h3>
+                        <div class="setting-item">
+                            <label>Ngôn ngữ</label>
+                            <select>
+                                <option value="vi">Tiếng Việt</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Chế độ tối</label>
+                            <input type="checkbox" id="darkModeToggle">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Hồ Sơ Người Dùng</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-section">
+                    <div class="profile-avatar-section">
+                        <div class="profile-avatar">
+                            <img src="/placeholder.svg?height=100&width=100" alt="Avatar" id="profileAvatar">
+                            <button class="btn btn-secondary" id="changeAvatarBtn">
+                                <i class="fas fa-camera"></i>
+                                Đổi ảnh
+                            </button>
+                        </div>
+                        <div class="profile-stats">
+                            <div class="stat-item">
+                                <span class="stat-value" id="profileJoinDate">--</span>
+                                <span class="stat-label">Ngày tham gia</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="profileLastLogin">--</span>
+                                <span class="stat-label">Lần đăng nhập cuối</span>
+                            </div>
+                        </div>
+                    </div>
+                    <form id="profileForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Họ</label>
+                                <input type="text" id="profileFirstName">
+                            </div>
+                            <div class="form-group">
+                                <label>Tên</label>
+                                <input type="text" id="profileLastName">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="profileEmail">
+                        </div>
+                        <div class="form-group">
+                            <label>Tên đăng nhập</label>
+                            <input type="text" id="profileUsername" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại</label>
+                            <input type="tel" id="profilePhone">
+                        </div>
+                        <div class="form-group">
+                            <label>Vai trò</label>
+                            <input type="text" id="profileRole" readonly>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelProfileBtn">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveProfileBtn">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal" id="changePasswordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Đổi Mật Khẩu</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label>Mật khẩu hiện tại</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="currentPassword" required>
+                            <button type="button" class="password-toggle" data-target="currentPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu mới</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="newPassword" required>
+                            <button type="button" class="password-toggle" data-target="newPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength" id="newPasswordStrength">
+                            <div class="strength-bar">
+                                <div class="strength-fill"></div>
+                            </div>
+                            <div class="strength-text">Độ mạnh mật khẩu</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Xác nhận mật khẩu mới</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="confirmNewPassword" required>
+                            <button type="button" class="password-toggle" data-target="confirmNewPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelPasswordBtn">Hủy</button>
+                <button type="button" class="btn btn-primary" id="savePasswordBtn">Đổi mật khẩu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Accounts Modal -->
+    <div class="modal" id="demoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Tài Khoản Demo</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="demo-intro">Sử dụng các tài khoản demo sau để trải nghiệm hệ thống:</p>
+                <div class="demo-accounts" id="demoAccountsList">
+                    <!-- Demo accounts will be populated here -->
+                </div>
+                <div class="demo-note">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Click vào tài khoản để tự động điền thông tin đăng nhập</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms Modal -->
+    <div class="modal" id="termsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Điều Khoản Sử Dụng</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="terms-content">
+                    <h4>1. Chấp nhận điều khoản</h4>
+                    <p>Bằng việc sử dụng hệ thống Findbot, bạn đồng ý tuân thủ các điều khoản và điều kiện được nêu trong tài liệu này.</p>
+                    
+                    <h4>2. Sử dụng hệ thống</h4>
+                    <p>Hệ thống được thiết kế để quản lý siêu thị. Người dùng cam kết sử dụng hệ thống một cách hợp pháp và không vi phạm quyền của bên thứ ba.</p>
+                    
+                    <h4>3. Bảo mật thông tin</h4>
+                    <p>Người dùng có trách nhiệm bảo mật thông tin đăng nhập và thông báo ngay cho quản trị viên nếu phát hiện tài khoản bị xâm phạm.</p>
+                    
+                    <h4>4. Quyền và nghĩa vụ</h4>
+                    <p>Người dùng chỉ được truy cập vào các chức năng phù hợp với vai trò được cấp và không được thực hiện các hành vi có thể gây hại cho hệ thống.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary modal-close">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Modal -->
+    <div class="modal" id="privacyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chính Sách Bảo Mật</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="privacy-content">
+                    <h4>1. Thu thập thông tin</h4>
+                    <p>Chúng tôi chỉ thu thập thông tin cần thiết để vận hành hệ thống quản lý siêu thị, bao gồm thông tin cá nhân cơ bản và dữ liệu sử dụng.</p>
+                    
+                    <h4>2. Sử dụng thông tin</h4>
+                    <p>Thông tin được sử dụng để cung cấp dịch vụ, cải thiện trải nghiệm người dùng và đảm bảo an ninh hệ thống.</p>
+                    
+                    <h4>3. Bảo vệ thông tin</h4>
+                    <p>Chúng tôi áp dụng các biện pháp bảo mật kỹ thuật và tổ chức để bảo vệ thông tin cá nhân khỏi truy cập trái phép.</p>
+                    
+                    <h4>4. Chia sẻ thông tin</h4>
+                    <p>Thông tin cá nhân không được chia sẻ với bên thứ ba trừ khi có sự đồng ý của người dùng hoặc theo yêu cầu pháp lý.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary modal-close">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="charts.js"></script>
+    <script src="enhanced-map.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
