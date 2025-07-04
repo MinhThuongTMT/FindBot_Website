@@ -491,11 +491,13 @@ class SupermarketMap {
     const legendHtml = legendItems
       .map(
         (item) => `
-      <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem;">
-        <div style="width: 16px; height: 16px; background: ${item.color}; border-radius: ${item.type === "area" ? "4px" : "2px"}; border: 1px solid #e5e7eb;"></div>
-        <span style="font-size: 0.875rem; color: #374151;">${item.label}</span>
-      </div>
-    `,
+        <div class="legend-item">
+          <span class="legend-color" style="background: ${item.color}; border-radius: ${
+            item.type === "area" ? "4px" : "2px"
+          };"></span>
+          <span class="legend-label">${item.label}</span>
+        </div>
+      `,
       )
       .join("")
 

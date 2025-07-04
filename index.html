@@ -11,6 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/nouislider/15.7.0/nouislider.min.css" rel="stylesheet">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -311,6 +313,10 @@
                     <i class="fas fa-search"></i>
                     <span>Tìm Kiếm & Lọc</span>
                 </li>
+                <li class="nav-item" data-tab="findbots">
+                    <i class="fas fa-robot"></i>
+                    <span>Quản Lý FindBot</span>
+                </li>
                 <li class="nav-item" data-tab="analytics">
                     <i class="fas fa-chart-pie"></i>
                     <span>Thống Kê</span>
@@ -587,10 +593,11 @@
                             </div>
                             <div class="filter-group price-range-group">
                                 <label>Giá (VNĐ)</label>
-                                <div class="price-range">
-                                    <input type="number" id="filterPriceMin" placeholder="Từ" min="0">
-                                    <span class="dash">-</span>
-                                    <input type="number" id="filterPriceMax" placeholder="Đến" min="0">
+                                <div class="price-range" style="flex-direction: column; gap:0.75rem;">
+                                    <div id="priceSlider"></div>
+                                    <div class="price-display"><span id="priceRangeLabel">0 - 0</span> ₫</div>
+                                    <input type="hidden" id="filterPriceMin" value="0">
+                                    <input type="hidden" id="filterPriceMax" value="0">
                                 </div>
                             </div>
                             <div class="filter-group">
@@ -632,6 +639,76 @@
                 </div>
             </div>
 
+            <!-- FindBots Tab -->
+            <div class="tab-content" id="findbots">
+                <div class="findbots-header">
+                    <div class="findbots-title">
+                        <h2>Quản Lý FindBot</h2>
+                        <div class="bot-stats-grid">
+                            <div class="bot-stat-card">
+                                <span class="bot-stat-number" id="totalBotsCount">0</span>
+                                <span class="bot-stat-label">Tổng Bot</span>
+                            </div>
+                            <div class="bot-stat-card">
+                                <span class="bot-stat-number" id="activeBotsCount">0</span>
+                                <span class="bot-stat-label">Đang hoạt động</span>
+                            </div>
+                            <div class="bot-stat-card">
+                                <span class="bot-stat-number" id="inactiveBotsCount">0</span>
+                                <span class="bot-stat-label">Không hoạt động</span>
+                            </div>
+                            <div class="bot-stat-card">
+                                <span class="bot-stat-number" id="offlineBotsCount">0</span>
+                                <span class="bot-stat-label">Ngoại tuyến</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="findbot-actions">
+                        <div class="findbot-search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="botSearchInput" class="findbot-search-input" placeholder="Tìm kiếm...">
+                        </div>
+                        <select id="botStatusFilter" class="select">
+                            <option value="">Tất cả</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="offline">Offline</option>
+                        </select>
+                        <button class="btn btn-secondary" id="toggleBotsView" title="Chế độ hiển thị">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                        <button class="btn btn-primary" id="startAllBots" title="Kích hoạt tất cả">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="btn btn-danger" id="stopAllBots" title="Dừng tất cả">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                        <button class="btn btn-secondary" id="refreshFindBots" title="Làm mới">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="findbots-table-container">
+                    <table class="products-table" id="findBotsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên</th>
+                                <th>Trạng Thái</th>
+                                <th>Pin</th>
+                                <th>Nhiệm Vụ</th>
+                                <th>Cập nhật</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="findBotsTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="bot-cards-grid" id="findBotsCards" style="display:none;"></div>
+            </div>
+
             <!-- Analytics Tab -->
             <div class="tab-content" id="analytics">
                 <div class="analytics-header">
@@ -665,14 +742,28 @@
                         <h3>Cài Đặt Chung</h3>
                         <div class="setting-item">
                             <label>Ngôn ngữ</label>
-                            <select>
+                            <select id="languageSelect">
                                 <option value="vi">Tiếng Việt</option>
                                 <option value="en">English</option>
                             </select>
                         </div>
-                        <div class="setting-item">
+                        <div class="setting-item switch-item">
                             <label>Chế độ tối</label>
-                            <input type="checkbox" id="darkModeToggle">
+                            <label class="switch">
+                                <input type="checkbox" id="darkModeToggle">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>Tiền tệ</label>
+                            <select id="currencySelect" class="select">
+                                <option value="VND">VNĐ</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Số sản phẩm mỗi trang</label>
+                            <input type="number" id="pageSizeInput" class="number-input" min="5" max="100" value="20">
                         </div>
                     </div>
                 </div>
@@ -872,9 +963,59 @@
         </div>
     </div>
 
+    <!-- Product Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="modalTitle">Thêm Sản Phẩm</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm" class="product-form">
+                    <div class="form-group">
+                        <label>Tên sản phẩm</label>
+                        <input type="text" id="productName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Danh mục</label>
+                        <select id="productCategory" required></select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Giá (VNĐ)</label>
+                            <input type="number" id="productPrice" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Số lượng</label>
+                            <input type="number" id="productQuantity" min="0" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Trạng thái</label>
+                        <select id="productStatus">
+                            <option value="available">Còn hàng</option>
+                            <option value="low-stock">Sắp hết</option>
+                            <option value="out-of-stock">Hết hàng</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Mô tả (tùy chọn)</label>
+                        <textarea id="productDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelBtn">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+
     <script src="auth.js"></script>
     <script src="charts.js"></script>
     <script src="enhanced-map.js"></script>
     <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nouislider/15.7.0/nouislider.min.js"></script>
 </body>
 </html>

@@ -718,6 +718,7 @@ function showTab(tabName) {
     map: "Bản Đồ Siêu Thị",
     search: "Tìm Kiếm & Lọc",
     analytics: "Thống Kê",
+    findbots: "Quản Lý FindBot",
     settings: "Cài Đặt",
   }
   if (pageTitle) pageTitle.textContent = titles[tabName] || "Dashboard"
@@ -727,6 +728,10 @@ function showTab(tabName) {
     setTimeout(() => initializeMap(), 100)
   } else if (tabName === "analytics") {
     setTimeout(() => initializeCharts(), 100)
+  } else if (tabName === "findbots") {
+    setTimeout(() => {
+      if (typeof findBotSystem !== "undefined") findBotSystem.refresh()
+    }, 100)
   }
 }
 
@@ -960,22 +965,30 @@ function openProductModal(product = null) {
 
   if (!modal || !modalTitle || !form) return
 
+  // Populate category options nếu chưa có
+  const productCategory = document.getElementById("productCategory")
+  if (productCategory && productCategory.options.length === 0) {
+    Object.entries(PRODUCT_CATEGORIES).forEach(([key, cat]) => {
+      const opt = document.createElement("option")
+      opt.value = key
+      opt.textContent = cat.name
+      productCategory.appendChild(opt)
+    })
+  }
+
   if (product) {
     modalTitle.textContent = "Sửa Sản Phẩm"
-    const productName = document.getElementById("productName")
-    const productCategory = document.getElementById("productCategory")
-    const productPrice = document.getElementById("productPrice")
-    const productQuantity = document.getElementById("productQuantity")
-    const productDescription = document.getElementById("productDescription")
-
-    if (productName) productName.value = product.name
-    if (productCategory) productCategory.value = product.category
-    if (productPrice) productPrice.value = product.price
-    if (productQuantity) productQuantity.value = product.quantity
-    if (productDescription) productDescription.value = product.description || ""
+    form.reset()
+    document.getElementById("productName").value = product.name
+    productCategory.value = product.category
+    document.getElementById("productPrice").value = product.price
+    document.getElementById("productQuantity").value = product.quantity
+    document.getElementById("productStatus").value = product.status
+    document.getElementById("productDescription").value = product.description || ""
   } else {
     modalTitle.textContent = "Thêm Sản Phẩm"
     form.reset()
+    document.getElementById("productStatus").value = "available"
   }
 
   modal.classList.add("active")
@@ -990,45 +1003,32 @@ function closeProductModal() {
 }
 
 function saveProduct() {
-  const productName = document.getElementById("productName")
-  const productCategory = document.getElementById("productCategory")
-  const productPrice = document.getElementById("productPrice")
-  const productQuantity = document.getElementById("productQuantity")
-  const productDescription = document.getElementById("productDescription")
+  const name = document.getElementById("productName").value.trim()
+  const category = document.getElementById("productCategory").value
+  const price = Number(document.getElementById("productPrice").value) || 0
+  const quantity = Number(document.getElementById("productQuantity").value) || 0
+  let status = document.getElementById("productStatus").value
+  const description = document.getElementById("productDescription").value.trim()
 
-  if (!productName || !productCategory || !productPrice || !productQuantity) return
-
-  const name = productName.value
-  const category = productCategory.value
-  const price = Number.parseInt(productPrice.value)
-  const quantity = Number.parseInt(productQuantity.value)
-  const description = productDescription ? productDescription.value : ""
-
-  if (!name || !category || !price || quantity === undefined) {
-    alert("Vui lòng điền đầy đủ thông tin bắt buộc!")
+  if (!name || !category) {
+    Swal.fire({ icon: "error", title: "Thiếu thông tin", text: "Vui lòng điền đầy đủ!" })
     return
   }
 
-  let status = "available"
-  if (quantity === 0) status = "out_of_stock"
-  else if (quantity <= 10) status = "low_stock"
+  // Tự tính trạng thái nếu người dùng không sửa
+  if (!status) {
+    if (quantity === 0) status = "out-of-stock"
+    else if (quantity <= 10) status = "low-stock"
+    else status = "available"
+  }
 
   if (currentEditingProduct) {
-    // Update existing product
-    const index = products.findIndex((p) => p.id === currentEditingProduct.id)
-    if (index !== -1) {
-      products[index] = {
-        ...products[index],
-        name,
-        category,
-        price,
-        quantity,
-        status,
-        description,
-      }
+    const idx = products.findIndex((p) => p.id === currentEditingProduct.id)
+    if (idx !== -1) {
+      products[idx] = { ...products[idx], name, category, price, quantity, status, description }
     }
+    Swal.fire({ icon: "success", title: "Đã cập nhật sản phẩm" })
   } else {
-    // Add new product
     const newProduct = {
       id: Math.max(...products.map((p) => p.id), 0) + 1,
       name,
@@ -1039,10 +1039,18 @@ function saveProduct() {
       description,
     }
     products.push(newProduct)
+    Swal.fire({ icon: "success", title: "Đã thêm sản phẩm" })
   }
+
+  // persist
+  localStorage.setItem("supermarket_products", JSON.stringify(products))
 
   renderProductsTable()
   updateDashboard()
+  if (window.ChartsSystem) {
+    ChartsSystem.prepareData()
+    ChartsSystem.refreshCharts()
+  }
   closeProductModal()
 }
 
@@ -1054,11 +1062,27 @@ function editProduct(id) {
 }
 
 function deleteProduct(id) {
-  if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này?")) {
-    products = products.filter((p) => p.id !== id)
-    renderProductsTable()
-    updateDashboard()
-  }
+  Swal.fire({
+    icon: "warning",
+    title: "Xóa sản phẩm?",
+    text: "Thao tác này không thể hoàn tác!",
+    showCancelButton: true,
+    confirmButtonText: "Xóa",
+    cancelButtonText: "Hủy",
+    confirmButtonColor: "#ef4444",
+  }).then((res) => {
+    if (res.isConfirmed) {
+      products = products.filter((p) => p.id !== id)
+      localStorage.setItem("supermarket_products", JSON.stringify(products))
+      renderProductsTable()
+      updateDashboard()
+      if (window.ChartsSystem) {
+        ChartsSystem.prepareData()
+        ChartsSystem.refreshCharts()
+      }
+      Swal.fire({ icon: "success", title: "Đã xóa sản phẩm" })
+    }
+  })
 }
 
 function handleGlobalSearch(event) {
@@ -1327,6 +1351,7 @@ class EnhancedSearchSystem {
     this.setupEventListeners()
     this.populateCategoryGrid()
     this.updateSearchStats()
+    this.initEnhancedControls()
   }
 
   setupEventListeners() {
@@ -2059,7 +2084,404 @@ class EnhancedSearchSystem {
       })
     }
   }
+
+  /**
+   * Khởi tạo Choices.js cho các select và noUiSlider cho giá tiền
+   */
+  initEnhancedControls() {
+    if (window.Choices) {
+      const catSel = document.getElementById("filterCategory")
+      const shelfSel = document.getElementById("filterShelf")
+      const statusSel = document.getElementById("filterStatus")
+      const sortSel = document.getElementById("sortOption")
+
+      const optsMulti = { removeItemButton: true, shouldSort: false, placeholder: true, searchEnabled: true }
+      if (catSel) new Choices(catSel, { ...optsMulti, placeholderValue: "Chọn danh mục" })
+      if (shelfSel) new Choices(shelfSel, { ...optsMulti, placeholderValue: "Chọn kệ" })
+      if (statusSel) new Choices(statusSel, { searchEnabled: false, itemSelectText: "" })
+      if (sortSel) new Choices(sortSel, { searchEnabled: false, itemSelectText: "" })
+    }
+
+    if (window.noUiSlider) {
+      const slider = document.getElementById("priceSlider")
+      if (slider && !slider.noUiSlider) {
+        noUiSlider.create(slider, {
+          start: [0, 500000],
+          connect: true,
+          step: 1000,
+          range: {
+            min: 0,
+            max: 1000000,
+          },
+          tooltips: [true, true],
+          format: {
+            to: (v) => Math.round(v).toLocaleString("vi-VN"),
+            from: (v) => Number(v.replace(/\./g, "")),
+          },
+        })
+
+        const minInput = document.getElementById("filterPriceMin")
+        const maxInput = document.getElementById("filterPriceMax")
+        const label = document.getElementById("priceRangeLabel")
+
+        slider.noUiSlider.on("update", (values, handle) => {
+          const min = Number(values[0].replace(/\./g, ""))
+          const max = Number(values[1].replace(/\./g, ""))
+          if (minInput) minInput.value = min
+          if (maxInput) maxInput.value = max
+          if (label) label.textContent = `${min.toLocaleString("vi-VN")} - ${max.toLocaleString("vi-VN")}`
+        })
+      }
+    }
+  }
 }
 
 // Initialize enhanced search system
 const enhancedSearchSystem = new EnhancedSearchSystem()
+
+class SettingsSystem {
+  constructor() {
+    this.defaultSettings = {
+      language: "vi",
+      darkMode: false,
+      currency: "VND",
+      pageSize: 20,
+    }
+    this.settings = { ...this.defaultSettings, ...this.load() }
+    this.apply()
+    this.bindUI()
+  }
+
+  load() {
+    try {
+      const data = JSON.parse(localStorage.getItem("findbot_settings") || "{}")
+      return data
+    } catch (e) {
+      return {}
+    }
+  }
+
+  save() {
+    localStorage.setItem("findbot_settings", JSON.stringify(this.settings))
+  }
+
+  apply() {
+    // Dark mode
+    if (this.settings.darkMode) document.body.classList.add("dark-mode")
+    else document.body.classList.remove("dark-mode")
+
+    // Language – placeholder for future i18n
+    document.documentElement.lang = this.settings.language
+  }
+
+  bindUI() {
+    const langSel = document.getElementById("languageSelect")
+    const darkToggle = document.getElementById("darkModeToggle")
+    const currencySel = document.getElementById("currencySelect")
+    const pageSizeInput = document.getElementById("pageSizeInput")
+
+    if (langSel) {
+      langSel.value = this.settings.language
+      langSel.addEventListener("change", (e) => {
+        this.settings.language = e.target.value
+        this.save(); this.apply()
+      })
+    }
+
+    if (darkToggle) {
+      darkToggle.checked = this.settings.darkMode
+      darkToggle.addEventListener("change", (e) => {
+        this.settings.darkMode = e.target.checked
+        this.save(); this.apply()
+      })
+    }
+
+    if (currencySel) {
+      currencySel.value = this.settings.currency
+      currencySel.addEventListener("change", (e) => {
+        this.settings.currency = e.target.value
+        this.save()
+      })
+    }
+
+    if (pageSizeInput) {
+      pageSizeInput.value = this.settings.pageSize
+      pageSizeInput.addEventListener("change", (e) => {
+        let val = Number(e.target.value) || 20
+        val = Math.min(Math.max(val, 5), 100)
+        this.settings.pageSize = val
+        e.target.value = val
+        this.save()
+      })
+    }
+  }
+}
+
+// Initialize settings system after DOM
+document.addEventListener("DOMContentLoaded", () => {
+  window.SettingsSystem = new SettingsSystem()
+})
+
+/* ------------ FindBot Management System ------------- */
+class FindBotSystem {
+  constructor() {
+    this.apiBase = "http://localhost:5000" // Thay đổi địa chỉ backend khi cần
+    this.bots = []
+    this.tableBody = null
+    this.statsEls = {
+      total: document.getElementById("totalBotsCount"),
+      active: document.getElementById("activeBotsCount"),
+      inactive: document.getElementById("inactiveBotsCount"),
+      offline: document.getElementById("offlineBotsCount"),
+    }
+    this.searchInput = document.getElementById("botSearchInput")
+    this.statusSelect = document.getElementById("botStatusFilter")
+    this.pollInterval = null
+  }
+
+  init() {
+    this.tableBody = document.getElementById("findBotsTableBody")
+    const refreshBtn = document.getElementById("refreshFindBots")
+    if (refreshBtn) refreshBtn.addEventListener("click", () => this.refresh())
+
+    // Bulk actions
+    const startAllBtn = document.getElementById("startAllBots")
+    const stopAllBtn = document.getElementById("stopAllBots")
+    if (startAllBtn) startAllBtn.addEventListener("click", () => this.startAll())
+    if (stopAllBtn) stopAllBtn.addEventListener("click", () => this.stopAll())
+
+    // Search & filter
+    if (this.searchInput) this.searchInput.addEventListener("input", () => this.render())
+    if (this.statusSelect) this.statusSelect.addEventListener("change", () => this.render())
+
+    this.refresh()
+
+    // Auto polling every 10s
+    if (!this.pollInterval) this.pollInterval = setInterval(() => this.refresh(false), 10000)
+
+    // Add view toggle button
+    const toggleViewBtn = document.getElementById("toggleBotsView")
+    if (toggleViewBtn) toggleViewBtn.addEventListener("click", () => this.toggleView())
+    this.viewMode = "table" // or 'grid'
+  }
+
+  async fetchBots() {
+    try {
+      const res = await fetch(`${this.apiBase}/findbots`)
+      if (!res.ok) throw new Error("Network error")
+      this.bots = await res.json()
+    } catch (e) {
+      console.error("Fetch findbots failed, fallback to mock", e)
+      this.bots = JSON.parse(localStorage.getItem("mock_findbots") || "[]")
+      if (!this.bots.length) {
+        this.bots = [
+          { id: "FB01", name: "FindBot 1", status: "inactive", battery: 75, task: "Chờ lệnh", lastSeen: Date.now() - 5 * 60 * 1000 },
+          { id: "FB02", name: "FindBot 2", status: "active", battery: 40, task: "Đang quét kệ 5", lastSeen: Date.now() - 15 * 1000 },
+          { id: "FB03", name: "FindBot 3", status: "offline", battery: 0, task: "-", lastSeen: Date.now() - 3600 * 1000 },
+        ]
+      }
+    }
+  }
+
+  async refresh(showLoading = true) {
+    await this.fetchBots()
+    this.render()
+    this.renderStats()
+  }
+
+  render() {
+    if (!this.tableBody) return
+
+    // Apply search & filter
+    const term = (this.searchInput?.value || "").toLowerCase()
+    const statusFilter = this.statusSelect?.value || ""
+    const list = this.bots.filter((b) => {
+      const matchesTerm = !term || b.name.toLowerCase().includes(term) || b.id.toLowerCase().includes(term)
+      const matchesStatus = !statusFilter || b.status === statusFilter
+      return matchesTerm && matchesStatus
+    })
+
+    const statusText = {
+      active: "Đang hoạt động",
+      inactive: "Không hoạt động",
+      offline: "Ngoại tuyến",
+    }
+
+    // Render table
+    const batteryLevelAttr = (batt) => (batt < 20 ? "critical" : batt < 50 ? "low" : "")
+
+    this.tableBody.innerHTML = list
+      .map((bot) => {
+        const statusClass = `status-${bot.status}`
+        const isActive = bot.status === "active"
+        const battery = bot.battery ?? 0
+        const lastSeen = bot.lastSeen ? this.timeAgo(bot.lastSeen) : "-"
+        return `
+          <tr>
+            <td>${bot.id}</td>
+            <td>${bot.name}</td>
+            <td><span class="status-badge ${statusClass}">${statusText[bot.status] || bot.status}</span></td>
+            <td>
+              <div class="battery-bar"><div class="battery-fill" data-level="${batteryLevelAttr(battery)}" style="width:${battery}%"></div></div>
+              <span style="font-size:0.75rem;">${battery}%</span>
+            </td>
+            <td>${bot.task || "-"}</td>
+            <td style="font-size:0.75rem; color:#64748b;">${lastSeen}</td>
+            <td>
+              <button class="btn btn-secondary findbot-action" data-id="${bot.id}" data-action="${isActive ? "deactivate" : "activate"}">
+                <i class="fas ${isActive ? "fa-stop" : "fa-play"}"></i>
+              </button>
+              <button class="btn btn-secondary findbot-detail" data-id="${bot.id}" title="Chi tiết">
+                <i class="fas fa-info-circle"></i>
+              </button>
+            </td>
+          </tr>
+        `
+      })
+      .join("")
+
+    // Render cards
+    const cardsContainer = document.getElementById("findBotsCards")
+    if (cardsContainer) {
+      cardsContainer.innerHTML = list
+        .map((bot) => {
+          const statusClass = `status-${bot.status}`
+          const isActive = bot.status === "active"
+          const battery = bot.battery ?? 0
+          const batteryLevel = batteryLevelAttr(battery)
+          return `
+            <div class="bot-card" data-id="${bot.id}">
+              <span class="status-badge ${statusClass} bot-status">${statusText[bot.status]}</span>
+              <h4>${bot.name}</h4>
+              <div>
+                <div class="battery-bar"><div class="battery-fill" data-level="${batteryLevel}" style="width:${battery}%"></div></div>
+                <span style="font-size:0.75rem;">PIN ${battery}%</span>
+              </div>
+              <div style="font-size:0.8rem; color:#64748b;">${bot.task || "-"}</div>
+              <div class="bot-actions">
+                <button class="btn btn-secondary findbot-action" data-id="${bot.id}" data-action="${isActive ? "deactivate" : "activate"}">
+                  <i class="fas ${isActive ? "fa-stop" : "fa-play"}"></i>
+                </button>
+                <button class="btn btn-secondary findbot-detail" data-id="${bot.id}" title="Chi tiết">
+                  <i class="fas fa-info-circle"></i>
+                </button>
+              </div>
+            </div>
+          `
+        })
+        .join("")
+    }
+
+    document.querySelectorAll(".findbot-action").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id
+        const action = btn.dataset.action
+        if (action === "activate") this.activate(id)
+        else this.deactivate(id)
+      })
+    })
+
+    document.querySelectorAll(".findbot-detail").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const bot = this.bots.find((b) => b.id === btn.dataset.id)
+        if (bot) this.showDetails(bot)
+      })
+    })
+  }
+
+  renderStats() {
+    const total = this.bots.length
+    const active = this.bots.filter((b) => b.status === "active").length
+    const inactive = this.bots.filter((b) => b.status === "inactive").length
+    const offline = this.bots.filter((b) => b.status === "offline").length
+
+    if (this.statsEls.total) this.statsEls.total.textContent = total
+    if (this.statsEls.active) this.statsEls.active.textContent = active
+    if (this.statsEls.inactive) this.statsEls.inactive.textContent = inactive
+    if (this.statsEls.offline) this.statsEls.offline.textContent = offline
+  }
+
+  timeAgo(ts) {
+    const diff = Date.now() - ts
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return "Vừa xong"
+    if (mins < 60) return `${mins} phút trước`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs} giờ trước`
+    const days = Math.floor(hrs / 24)
+    return `${days} ngày trước`
+  }
+
+  async activate(id) {
+    try {
+      await fetch(`${this.apiBase}/findbots/${id}/activate`, { method: "POST" })
+    } catch (e) {
+      console.error("Activate failed", e)
+    }
+    this.refresh()
+  }
+
+  async deactivate(id) {
+    try {
+      await fetch(`${this.apiBase}/findbots/${id}/deactivate`, { method: "POST" })
+    } catch (e) {
+      console.error("Deactivate failed", e)
+    }
+    this.refresh()
+  }
+
+  async startAll() {
+    try {
+      await fetch(`${this.apiBase}/findbots/startAll`, { method: "POST" })
+    } catch (e) {
+      console.error("startAll failed", e)
+    }
+    this.refresh()
+  }
+
+  async stopAll() {
+    try {
+      await fetch(`${this.apiBase}/findbots/stopAll`, { method: "POST" })
+    } catch (e) {
+      console.error("stopAll failed", e)
+    }
+    this.refresh()
+  }
+
+  showDetails(bot) {
+    const html = `
+      <div style="text-align:left;">
+        <p><strong>ID:</strong> ${bot.id}</p>
+        <p><strong>Tên:</strong> ${bot.name}</p>
+        <p><strong>Trạng thái:</strong> ${bot.status}</p>
+        <p><strong>Pin:</strong> ${bot.battery || 0}%</p>
+        <p><strong>Nhiệm vụ hiện tại:</strong> ${bot.task || "-"}</p>
+        <p><strong>Lần cập nhật:</strong> ${bot.lastSeen ? new Date(bot.lastSeen).toLocaleString() : "-"}</p>
+      </div>
+    `
+    if (window.Swal) {
+      Swal.fire({ title: `Chi tiết ${bot.name}`, html, confirmButtonText: "Đóng" })
+    }
+  }
+
+  toggleView() {
+    this.viewMode = this.viewMode === "table" ? "grid" : "table"
+    const tableEl = document.getElementById("findBotsTable")
+    const cardsEl = document.getElementById("findBotsCards")
+    const toggleBtn = document.getElementById("toggleBotsView")
+    if (this.viewMode === "grid") {
+      if (tableEl) tableEl.closest(".findbots-table-container").style.display = "none"
+      if (cardsEl) cardsEl.style.display = "grid"
+      if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-list"></i>'
+    } else {
+      if (tableEl) tableEl.closest(".findbots-table-container").style.display = "block"
+      if (cardsEl) cardsEl.style.display = "none"
+      if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-th-large"></i>'
+    }
+    this.render()
+  }
+} // End class
+
+// Global instance
+const findBotSystem = new FindBotSystem()
+window.findBotSystem = findBotSystem

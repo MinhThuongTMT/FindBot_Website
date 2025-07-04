@@ -448,6 +448,49 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* Added modern legend styles */
+.legend-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.875rem;
+  color: #374151;
+  transition: all 0.25s ease;
+}
+
+.legend-item:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+.dark-mode .legend-item {
+  background: #1f2937;
+  border-color: #374151;
+  color: #d1d5db;
+}
+
+.dark-mode .legend-item:hover {
+  background: #111827;
+}
+
 /* Search Styles */
 .search-header {
   display: flex;
@@ -671,33 +714,106 @@ body {
 /* Settings Styles */
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .settings-card {
-  background: white;
+  background: #ffffff;
   border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .settings-card h3 {
   margin-bottom: 1rem;
-  color: #1e293b;
+  font-size: 1rem;
   font-weight: 600;
+  color: #1e293b;
 }
 
 .setting-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #f3f4f6;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 1rem;
 }
 
 .setting-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.setting-item label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.setting-item select,
+.setting-item .number-input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+  font-size: 0.875rem;
+}
+
+.setting-item .number-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Switch Toggle */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #d1d5db;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #667eea;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+.round {
+  border-radius: 24px;
 }
 
 /* Button Styles */
@@ -824,6 +940,22 @@ body {
 .status-out-of-stock {
   background: #fee2e2;
   color: #991b1b;
+}
+
+/* FindBot status badges */
+.status-active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-inactive {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.status-offline {
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 /* Action Buttons */
@@ -1344,4 +1476,227 @@ body.dark-mode {
 }
 .select-status option[value="out-of-stock"] {
   background-color: #fee2e2;
+}
+
+/* Choices.js overrides */
+.choices {
+  min-width: 160px;
+}
+.choices__inner {
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  padding: 0.55rem 0.75rem;
+  background: #f9fafb;
+  font-size: 0.875rem;
+}
+.choices__list--multiple .choices__item {
+  background: #667eea;
+  color: #fff;
+  border-radius: 0.25rem;
+  margin-right: 0.25rem;
+  margin-bottom: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* noUiSlider */
+.noUi-target {
+  background: #e5e7eb;
+  border-radius: 0.5rem;
+  height: 6px;
+}
+.noUi-connect {
+  background: #667eea;
+}
+.noUi-handle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #667eea;
+  top: -6px;
+}
+.noUi-handle:hover {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+.price-display {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+/* ===== FindBot Management ===== */
+.findbots-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.bot-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.bot-stat-card {
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.bot-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.bot-stat-number {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #4f46e5;
+}
+
+.bot-stat-label {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.findbot-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.findbot-search {
+  position: relative;
+}
+
+.findbot-search i {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+}
+
+.findbot-search-input {
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: white;
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.findbot-search-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Battery bar */
+.battery-bar {
+  width: 100px;
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.battery-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+}
+
+/* Dark mode adjustments */
+.dark-mode .bot-stat-card {
+  background: #1e293b;
+  box-shadow: none;
+}
+
+.dark-mode .bot-stat-number {
+  color: #a5b4fc;
+}
+
+.dark-mode .bot-stat-label {
+  color: #9ca3af;
+}
+
+.dark-mode .findbot-search-input {
+  background: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.dark-mode .battery-bar {
+  background: #334155;
+}
+
+/* Bot cards grid */
+.bot-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.bot-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.bot-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.bot-card .bot-status {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.75rem;
+}
+
+.bot-card h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+
+.bot-card .battery-bar {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.bot-card .bot-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dark-mode .bot-card {
+  background: #1e293b;
+}
+
+/* Battery gradient by level */
+.battery-fill[data-level="low"] {
+  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+}
+
+.battery-fill[data-level="critical"] {
+  background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
 }
