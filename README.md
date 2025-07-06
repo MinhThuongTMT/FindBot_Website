@@ -109,15 +109,7 @@ Nếu API không khả dụng, hệ thống sẽ tự động chuyển sang dữ
 
 ---
 
-## 📄 Giấy phép
+## 💡 Nếu bạn thích dự án này, hãy ⭐️ trên GitHub nhé! 
 
-Dự án được phát hành theo giấy phép **MIT**. Bạn có thể tự do sử dụng, chỉnh sửa và phân phối – chỉ cần giữ nguyên thông tin bản quyền tác giả.
-
----
-
-## 🙏 Cám ơn
-
-- Cuộc thi **AI Challenge 2025** đã truyền cảm hứng cho ý tưởng FindBot.
-- Các thư viện mã nguồn mở giúp dự án hoàn thiện nhanh chóng.
-
-Chúc bạn có trải nghiệm thú vị cùng **FindBot Website**! ✨ 
+### 📩 Liên hệ:  
+[tranminhthuong08082003@gmail.com](mailto:tranminhthuong08082003@gmail.com)
