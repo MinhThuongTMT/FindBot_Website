@@ -1534,11 +1534,92 @@ body.dark-mode {
   margin-bottom: 1.5rem;
 }
 
+/* Điều chỉnh khoảng cách và giao diện cho bot stats grid */
 .bot-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6.5rem; /* Tăng khoảng cách giữa các thẻ */
+    margin-top: 1rem;
+}
+
+.bot-stat-card {
+    background-color: #f9fafb;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.bot-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bot-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    margin-right: 1rem;
+}
+
+.total-bots .bot-stat-icon {
+    background-color: #e6f3ff;
+    color: #2196f3;
+}
+
+.active-bots .bot-stat-icon {
+    background-color: #e8f5e9;
+    color: #4caf50;
+}
+
+.inactive-bots .bot-stat-icon {
+    background-color: #fff3e0;
+    color: #ff9800;
+}
+
+.offline-bots .bot-stat-icon {
+    background-color: #ffebee;
+    color: #f44336;
+}
+
+.bot-stat-icon i {
+    font-size: 1.5rem;
+}
+
+.bot-stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.bot-stat-number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+
+.bot-stat-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+@media (max-width: 768px) {
+    .bot-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .bot-stats-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .bot-stat-card {
@@ -1569,12 +1650,17 @@ body.dark-mode {
 .findbot-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .findbot-search {
-  position: relative;
+    flex-grow: 1;
+    position: relative;
 }
 
 .findbot-search i {
@@ -1586,18 +1672,97 @@ body.dark-mode {
 }
 
 .findbot-search-input {
-  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 0.75rem;
-  background: white;
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
   font-size: 0.875rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .findbot-search-input:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.findbot-search .fas.fa-search {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+}
+
+#botStatusFilter {
+    min-width: 160px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: white;
+    font-size: 0.875rem;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M1 4l5 5 5-5' fill='none' stroke='%239ca3af' stroke-width='2'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    transition: all 0.3s ease;
+}
+
+#botStatusFilter:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.findbot-actions .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.5rem;
+    padding: 0;
+    background-color: #f3f4f6;
+    color: #6b7280;
+    transition: all 0.3s ease;
+}
+
+.findbot-actions .btn:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.findbot-actions .btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.findbot-actions .btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.findbot-actions .btn-danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.findbot-actions .btn-danger:hover {
+    background-color: #dc2626;
+}
+
+@media (max-width: 768px) {
+    .findbot-actions {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .findbot-search {
+        flex-basis: 100%;
+    }
+
+    #botStatusFilter {
+        flex-grow: 1;
+    }
 }
 
 /* Battery bar */
@@ -1699,4 +1864,687 @@ body.dark-mode {
 
 .battery-fill[data-level="critical"] {
   background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
+}
+
+/* Styles cho chi tiết FindBot và nhiệm vụ */
+.findbot-details-modal {
+  font-family: 'Inter', sans-serif;
+}
+
+.bot-task-details {
+  text-align: left;
+  padding: 1rem;
+}
+
+.bot-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.bot-status-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.battery-info {
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+.tasks-list {
+  margin-bottom: 1rem;
+}
+
+.task-item {
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.task-item:hover {
+  background: #f1f5f9;
+}
+
+.task-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.task-status {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+}
+
+.task-status.pending {
+  color: #f59e0b;
+}
+
+.task-status.in_progress {
+  color: #3b82f6;
+}
+
+.task-status.completed {
+  color: #10b981;
+}
+
+.task-status.failed {
+  color: #ef4444;
+}
+
+.task-details {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.remote-control {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.remote-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.remote-action {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Dark mode adjustments */
+.dark-mode .findbot-details-modal {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.dark-mode .bot-info {
+  border-bottom-color: #334155;
+}
+
+.dark-mode .task-item {
+  background: #0f172a;
+}
+
+.dark-mode .task-item:hover {
+  background: #1e293b;
+}
+
+.dark-mode .task-name {
+  color: #e2e8f0;
+}
+
+.dark-mode .remote-control {
+  border-top-color: #334155;
+}
+
+/* Styles cho thẻ năng lực FindBot */
+.capabilities {
+  margin-top: 1rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.capabilities h4 {
+  margin-bottom: 0.5rem;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.capabilities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.capability-tag {
+  background: #e2e8f0;
+  color: #4a5568;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  transition: background-color 0.2s ease;
+}
+
+.capability-tag:hover {
+  background: #cbd5e0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  background: #f8fafc;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+.info-item i {
+  color: #4f46e5;
+}
+
+.task-extra-details {
+  margin-top: 0.5rem;
+  background: #f1f5f9;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Dark mode adjustments */
+.dark-mode .capabilities {
+  background: #0f172a;
+}
+
+.dark-mode .capabilities h4 {
+  color: #e2e8f0;
+}
+
+.dark-mode .capability-tag {
+  background: #334155;
+  color: #cbd5e0;
+}
+
+.dark-mode .capability-tag:hover {
+  background: #475569;
+}
+
+.dark-mode .info-grid {
+  background: #1e293b;
+}
+
+.dark-mode .info-item {
+  color: #cbd5e0;
+}
+
+.dark-mode .task-extra-details {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+/* Styles cho bảng và thẻ FindBot */
+.findbots-table-container {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.products-table th {
+  background: #f8fafc;
+  color: #4a5568;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.products-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.status-active {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.status-badge.status-inactive {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-badge.status-offline {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.battery-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.battery-bar {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 5px;
+  flex-grow: 1;
+  max-width: 100px;
+}
+
+.battery-bar.battery-critical {
+  background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
+}
+
+.battery-bar.battery-low {
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+}
+
+.battery-bar.battery-good {
+  background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+}
+
+.battery-percentage {
+  font-size: 0.75rem;
+  color: #64748b;
+  min-width: 40px;
+}
+
+.bot-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bot-actions .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Chế độ thẻ FindBot */
+.bot-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.bot-card {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.bot-card:hover {
+  transform: translateY(-5px);
+}
+
+.bot-card-header {
+  background: #f8fafc;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.bot-card-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.bot-card-body {
+  padding: 1rem;
+}
+
+.bot-card-body .battery-container {
+  margin-bottom: 0.5rem;
+}
+
+.bot-task {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.bot-card-actions {
+  display: flex;
+  border-top: 1px solid #e2e8f0;
+}
+
+.bot-card-actions .btn-sm {
+  flex-grow: 1;
+  padding: 0.75rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  border-right: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+.bot-card-actions .btn-sm:last-child {
+  border-right: none;
+}
+
+.bot-card-actions .btn-sm:hover {
+  background: #f8fafc;
+}
+
+/* Dark mode adjustments */
+.dark-mode .findbots-table-container,
+.dark-mode .bot-card {
+  background: #1e293b;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.dark-mode .products-table th {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-bottom-color: #334155;
+}
+
+.dark-mode .products-table td {
+  border-bottom-color: #334155;
+}
+
+.dark-mode .status-badge.status-active {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+.dark-mode .status-badge.status-inactive {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+.dark-mode .status-badge.status-offline {
+  background: #374151;
+  color: #9ca3af;
+}
+
+.dark-mode .battery-bar {
+  background: #334155;
+}
+
+.dark-mode .battery-percentage {
+  color: #9ca3af;
+}
+
+.dark-mode .bot-card-header {
+  background: #0f172a;
+  border-bottom-color: #334155;
+}
+
+.dark-mode .bot-card-header h4 {
+  color: #e2e8f0;
+}
+
+.dark-mode .bot-task {
+  color: #9ca3af;
+}
+
+.dark-mode .bot-card-actions {
+  border-top-color: #334155;
+}
+
+.dark-mode .bot-card-actions .btn-sm:hover {
+  background: #0f172a;
+}
+
+/* Charging Progress Styles */
+.charging-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+}
+
+.charging-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.charging-text {
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 0;
+    height: 100%;
+    background-color: #4caf50;
+    transition: width 0.3s ease;
+}
+
+/* FindBot Status Indicators */
+.bot-status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.bot-status-active {
+    background-color: #4caf50;
+}
+
+.bot-status-inactive {
+    background-color: #ff9800;
+}
+
+.bot-status-charging {
+    background-color: #2196f3;
+    animation: pulse 1.5s infinite;
+}
+
+.bot-status-offline {
+    background-color: #f44336;
+}
+
+/* Hiệu ứng pin */
+@keyframes battery-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.battery-pulse {
+    animation: battery-pulse 1.5s infinite;
+    color: #f44336 !important;
+}
+
+.low-battery-alert {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.low-battery-alert .battery-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: rgba(244, 67, 54, 0.1);
+}
+
+.charging-details {
+    margin-top: 1rem;
+    text-align: center;
+    color: #6b7280;
+}
+
+.charging-details p {
+    margin: 0.25rem 0;
+    font-size: 0.875rem;
+}
+
+/* Notification Styles */
+.notification-dropdown {
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    width: 350px;
+    max-height: 500px;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    z-index: 1000;
+    display: none; /* Ẩn mặc định */
+}
+
+#notificationBtn:focus + .notification-dropdown,
+.notification-dropdown:hover {
+    display: block;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.notification-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #374151;
+}
+
+.clear-notifications-btn {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.notification-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.notification-item:hover {
+    background-color: #f3f4f6;
+}
+
+.notification-icon {
+    margin-right: 1rem;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.notification-item.warning .notification-icon {
+    color: #ff9800;
+}
+
+.notification-item.error .notification-icon {
+    color: #f44336;
+}
+
+.notification-item.info .notification-icon {
+    color: #2196f3;
+}
+
+.notification-item.success .notification-icon {
+    color: #4caf50;
+}
+
+.notification-content {
+    flex-grow: 1;
+}
+
+.notification-message {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.notification-item.unread {
+    background-color: #f3f4f6;
+    font-weight: bold;
+}
+
+/* Notification Badge */
+#notificationBadge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #f44336;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    display: none;
 }

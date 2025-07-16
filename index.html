@@ -357,6 +357,9 @@
                         <i class="fas fa-bell"></i>
                         <span class="badge" id="notificationBadge">0</span>
                     </button>
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <!-- Thông báo sẽ được render động ở đây -->
+                    </div>
                     <div class="user-profile" id="userProfile">
                         <img src="/placeholder.svg?height=40&width=40" alt="User" id="userAvatar">
                         <div class="user-info">
@@ -645,21 +648,41 @@
                     <div class="findbots-title">
                         <h2>Quản Lý FindBot</h2>
                         <div class="bot-stats-grid">
-                            <div class="bot-stat-card">
-                                <span class="bot-stat-number" id="totalBotsCount">0</span>
-                                <span class="bot-stat-label">Tổng Bot</span>
+                            <div class="bot-stat-card total-bots">
+                                <div class="bot-stat-icon">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="bot-stat-content">
+                                    <span class="bot-stat-number" id="totalBotsCount">0</span>
+                                    <span class="bot-stat-label">Tổng Bot</span>
+                                </div>
                             </div>
-                            <div class="bot-stat-card">
-                                <span class="bot-stat-number" id="activeBotsCount">0</span>
-                                <span class="bot-stat-label">Đang hoạt động</span>
+                            <div class="bot-stat-card active-bots">
+                                <div class="bot-stat-icon">
+                                    <i class="fas fa-play-circle"></i>
+                                </div>
+                                <div class="bot-stat-content">
+                                    <span class="bot-stat-number" id="activeBotsCount">0</span>
+                                    <span class="bot-stat-label">Đang hoạt động</span>
+                                </div>
                             </div>
-                            <div class="bot-stat-card">
-                                <span class="bot-stat-number" id="inactiveBotsCount">0</span>
-                                <span class="bot-stat-label">Không hoạt động</span>
+                            <div class="bot-stat-card inactive-bots">
+                                <div class="bot-stat-icon">
+                                    <i class="fas fa-pause-circle"></i>
+                                </div>
+                                <div class="bot-stat-content">
+                                    <span class="bot-stat-number" id="inactiveBotsCount">0</span>
+                                    <span class="bot-stat-label">Không hoạt động</span>
+                                </div>
                             </div>
-                            <div class="bot-stat-card">
-                                <span class="bot-stat-number" id="offlineBotsCount">0</span>
-                                <span class="bot-stat-label">Ngoại tuyến</span>
+                            <div class="bot-stat-card offline-bots">
+                                <div class="bot-stat-icon">
+                                    <i class="fas fa-power-off"></i>
+                                </div>
+                                <div class="bot-stat-content">
+                                    <span class="bot-stat-number" id="offlineBotsCount">0</span>
+                                    <span class="bot-stat-label">Ngoại tuyến</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -685,6 +708,9 @@
                         </button>
                         <button class="btn btn-secondary" id="refreshFindBots" title="Làm mới">
                             <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="btn btn-success" id="createNewBotBtn" title="Tạo FindBot Mới">
+                            <i class="fas fa-plus"></i>
                         </button>
                     </div>
                 </div>
@@ -1011,10 +1037,72 @@
         </div>
     </div>
 
+    <!-- FindBot Creation Modal -->
+    <div class="modal" id="createFindBotModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="createFindBotModalTitle">Tạo FindBot Mới</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createFindBotForm" class="findbot-form">
+                    <div class="form-group">
+                        <label>Tên FindBot</label>
+                        <input type="text" id="newBotName" placeholder="Nhập tên FindBot" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Mô Hình</label>
+                        <select id="newBotModel" required>
+                            <option value="">Chọn mô hình</option>
+                            <option value="FindBot Standard">FindBot Standard</option>
+                            <option value="FindBot Pro">FindBot Pro</option>
+                            <option value="FindBot Compact">FindBot Compact</option>
+                            <option value="FindBot Thermal">FindBot Thermal</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Vị Trí</label>
+                        <input type="text" id="newBotLocation" placeholder="Nhập vị trí">
+                    </div>
+                    <div class="form-group">
+                        <label>Khả Năng</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="capabilities" value="Quét kệ">
+                                <span class="checkmark"></span>
+                                Quét kệ
+                            </label>
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="capabilities" value="Kiểm kê">
+                                <span class="checkmark"></span>
+                                Kiểm kê
+                            </label>
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="capabilities" value="Báo cáo lỗi">
+                                <span class="checkmark"></span>
+                                Báo cáo lỗi
+                            </label>
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="capabilities" value="Giám sát nhiệt độ">
+                                <span class="checkmark"></span>
+                                Giám sát nhiệt độ
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelCreateBotBtn">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveNewBotBtn">Tạo FindBot</button>
+            </div>
+        </div>
+    </div>
+
     <script src="auth.js"></script>
     <script src="charts.js"></script>
     <script src="enhanced-map.js"></script>
     <script src="script.js"></script>
+    <script src="findbot-management.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nouislider/15.7.0/nouislider.min.js"></script>
 </body>

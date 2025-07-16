@@ -2237,32 +2237,74 @@ class FindBotSystem {
     this.searchInput = document.getElementById("botSearchInput")
     this.statusSelect = document.getElementById("botStatusFilter")
     this.pollInterval = null
+    this.selectedBot = null
+    this.botTasks = {
+      "FB01": [
+        { id: "T001", name: "Quét kệ A", status: "completed", startTime: Date.now() - 3600000, endTime: Date.now() - 3000000 },
+        { id: "T002", name: "Kiểm tra hàng tồn", status: "in_progress", startTime: Date.now() - 1800000 }
+      ],
+      "FB02": [
+        { id: "T003", name: "Sắp xếp hàng", status: "pending", startTime: null },
+        { id: "T004", name: "Báo cáo lỗi kệ", status: "completed", startTime: Date.now() - 2700000, endTime: Date.now() - 2000000 }
+      ],
+      "FB03": []
+    }
   }
 
   init() {
+    // Lấy các phần tử DOM cần thiết
     this.tableBody = document.getElementById("findBotsTableBody")
-    const refreshBtn = document.getElementById("refreshFindBots")
-    if (refreshBtn) refreshBtn.addEventListener("click", () => this.refresh())
+    this.searchInput = document.getElementById("botSearchInput")
+    this.statusSelect = document.getElementById("botStatusFilter")
+    
+    // Thống kê
+    this.statsEls = {
+      total: document.getElementById("totalBotsCount"),
+      active: document.getElementById("activeBotsCount"),
+      inactive: document.getElementById("inactiveBotsCount"),
+      offline: document.getElementById("offlineBotsCount")
+    }
 
-    // Bulk actions
+    // Nút làm mới
+    const refreshBtn = document.getElementById("refreshFindBots")
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", () => this.refresh())
+    }
+
+    // Nút chuyển chế độ xem
+    const toggleViewBtn = document.getElementById("toggleBotsView")
+    if (toggleViewBtn) {
+      toggleViewBtn.addEventListener("click", () => this.toggleView())
+    }
+
+    // Nút kích hoạt/dừng tất cả
     const startAllBtn = document.getElementById("startAllBots")
     const stopAllBtn = document.getElementById("stopAllBots")
-    if (startAllBtn) startAllBtn.addEventListener("click", () => this.startAll())
-    if (stopAllBtn) stopAllBtn.addEventListener("click", () => this.stopAll())
+    
+    if (startAllBtn) {
+      startAllBtn.addEventListener("click", () => this.startAll())
+    }
+    
+    if (stopAllBtn) {
+      stopAllBtn.addEventListener("click", () => this.stopAll())
+    }
 
-    // Search & filter
-    if (this.searchInput) this.searchInput.addEventListener("input", () => this.render())
-    if (this.statusSelect) this.statusSelect.addEventListener("change", () => this.render())
+    // Sự kiện tìm kiếm và lọc
+    if (this.searchInput) {
+      this.searchInput.addEventListener("input", () => this.render())
+    }
+    
+    if (this.statusSelect) {
+      this.statusSelect.addEventListener("change", () => this.render())
+    }
 
-    this.refresh()
+    // Chế độ xem mặc định
+    this.viewMode = "table"
 
-    // Auto polling every 10s
-    if (!this.pollInterval) this.pollInterval = setInterval(() => this.refresh(false), 10000)
-
-    // Add view toggle button
-    const toggleViewBtn = document.getElementById("toggleBotsView")
-    if (toggleViewBtn) toggleViewBtn.addEventListener("click", () => this.toggleView())
-    this.viewMode = "table" // or 'grid'
+    // Tự động làm mới mỗi 10 giây
+    if (!this.pollInterval) {
+      this.pollInterval = setInterval(() => this.refresh(false), 10000)
+    }
   }
 
   async fetchBots() {
@@ -2292,99 +2334,133 @@ class FindBotSystem {
   render() {
     if (!this.tableBody) return
 
-    // Apply search & filter
+    // Áp dụng tìm kiếm & lọc
     const term = (this.searchInput?.value || "").toLowerCase()
     const statusFilter = this.statusSelect?.value || ""
     const list = this.bots.filter((b) => {
-      const matchesTerm = !term || b.name.toLowerCase().includes(term) || b.id.toLowerCase().includes(term)
+      const matchesTerm = !term || 
+        b.name.toLowerCase().includes(term) || 
+        b.id.toLowerCase().includes(term)
       const matchesStatus = !statusFilter || b.status === statusFilter
       return matchesTerm && matchesStatus
     })
 
     const statusText = {
-      active: "Đang hoạt động",
-      inactive: "Không hoạt động",
-      offline: "Ngoại tuyến",
+      'active': 'Đang hoạt động',
+      'inactive': 'Không hoạt động', 
+      'offline': 'Ngoại tuyến'
     }
 
-    // Render table
-    const batteryLevelAttr = (batt) => (batt < 20 ? "critical" : batt < 50 ? "low" : "")
+    const batteryLevelClass = (battery) => {
+      if (battery < 20) return 'battery-critical'
+      if (battery < 50) return 'battery-low'
+      return 'battery-good'
+    }
 
-    this.tableBody.innerHTML = list
-      .map((bot) => {
-        const statusClass = `status-${bot.status}`
-        const isActive = bot.status === "active"
-        const battery = bot.battery ?? 0
-        const lastSeen = bot.lastSeen ? this.timeAgo(bot.lastSeen) : "-"
-        return `
-          <tr>
-            <td>${bot.id}</td>
-            <td>${bot.name}</td>
-            <td><span class="status-badge ${statusClass}">${statusText[bot.status] || bot.status}</span></td>
-            <td>
-              <div class="battery-bar"><div class="battery-fill" data-level="${batteryLevelAttr(battery)}" style="width:${battery}%"></div></div>
-              <span style="font-size:0.75rem;">${battery}%</span>
-            </td>
-            <td>${bot.task || "-"}</td>
-            <td style="font-size:0.75rem; color:#64748b;">${lastSeen}</td>
-            <td>
-              <button class="btn btn-secondary findbot-action" data-id="${bot.id}" data-action="${isActive ? "deactivate" : "activate"}">
-                <i class="fas ${isActive ? "fa-stop" : "fa-play"}"></i>
-              </button>
-              <button class="btn btn-secondary findbot-detail" data-id="${bot.id}" title="Chi tiết">
-                <i class="fas fa-info-circle"></i>
-              </button>
-            </td>
-          </tr>
-        `
-      })
-      .join("")
+    // Render bảng FindBot
+    this.tableBody.innerHTML = list.map(bot => `
+      <tr>
+        <td>${bot.id}</td>
+        <td>${bot.name}</td>
+        <td>
+          <span class="status-badge status-${bot.status}">
+            ${statusText[bot.status] || bot.status}
+          </span>
+        </td>
+        <td>
+          <div class="battery-container">
+            <div 
+              class="battery-bar ${batteryLevelClass(bot.battery)}" 
+              style="width: ${bot.battery}%"
+            ></div>
+            <span class="battery-percentage">${bot.battery}%</span>
+          </div>
+        </td>
+        <td>${bot.task || '-'}</td>
+        <td>${this.timeAgo(bot.lastSeen)}</td>
+        <td>
+          <div class="bot-actions">
+            <button 
+              class="btn btn-sm findbot-detail" 
+              data-id="${bot.id}" 
+              title="Chi tiết"
+            >
+              <i class="fas fa-info-circle"></i>
+            </button>
+            <button 
+              class="btn btn-sm findbot-toggle" 
+              data-id="${bot.id}" 
+              data-status="${bot.status}"
+              title="${bot.status === 'active' ? 'Tạm dừng' : 'Kích hoạt'}"
+            >
+              <i class="fas ${bot.status === 'active' ? 'fa-pause' : 'fa-play'}"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('')
 
-    // Render cards
+    // Render cards (nếu chế độ grid được chọn)
     const cardsContainer = document.getElementById("findBotsCards")
     if (cardsContainer) {
-      cardsContainer.innerHTML = list
-        .map((bot) => {
-          const statusClass = `status-${bot.status}`
-          const isActive = bot.status === "active"
-          const battery = bot.battery ?? 0
-          const batteryLevel = batteryLevelAttr(battery)
-          return `
-            <div class="bot-card" data-id="${bot.id}">
-              <span class="status-badge ${statusClass} bot-status">${statusText[bot.status]}</span>
-              <h4>${bot.name}</h4>
-              <div>
-                <div class="battery-bar"><div class="battery-fill" data-level="${batteryLevel}" style="width:${battery}%"></div></div>
-                <span style="font-size:0.75rem;">PIN ${battery}%</span>
-              </div>
-              <div style="font-size:0.8rem; color:#64748b;">${bot.task || "-"}</div>
-              <div class="bot-actions">
-                <button class="btn btn-secondary findbot-action" data-id="${bot.id}" data-action="${isActive ? "deactivate" : "activate"}">
-                  <i class="fas ${isActive ? "fa-stop" : "fa-play"}"></i>
-                </button>
-                <button class="btn btn-secondary findbot-detail" data-id="${bot.id}" title="Chi tiết">
-                  <i class="fas fa-info-circle"></i>
-                </button>
-              </div>
+      cardsContainer.innerHTML = list.map(bot => `
+        <div class="bot-card" data-id="${bot.id}">
+          <div class="bot-card-header">
+            <span class="status-badge status-${bot.status}">
+              ${statusText[bot.status]}
+            </span>
+            <h4>${bot.name}</h4>
+          </div>
+          <div class="bot-card-body">
+            <div class="battery-container">
+              <div 
+                class="battery-bar ${batteryLevelClass(bot.battery)}" 
+                style="width: ${bot.battery}%"
+              ></div>
+              <span class="battery-percentage">${bot.battery}%</span>
             </div>
-          `
-        })
-        .join("")
+            <p class="bot-task">${bot.task || 'Chưa có nhiệm vụ'}</p>
+          </div>
+          <div class="bot-card-actions">
+            <button 
+              class="btn btn-sm findbot-detail" 
+              data-id="${bot.id}"
+            >
+              <i class="fas fa-info-circle"></i> Chi tiết
+            </button>
+            <button 
+              class="btn btn-sm findbot-toggle" 
+              data-id="${bot.id}" 
+              data-status="${bot.status}"
+              title="${bot.status === 'active' ? 'Tạm dừng' : 'Kích hoạt'}"
+            >
+              <i class="fas ${bot.status === 'active' ? 'fa-pause' : 'fa-play'}"></i>
+              ${bot.status === 'active' ? 'Tạm dừng' : 'Kích hoạt'}
+            </button>
+          </div>
+        </div>
+      `).join('')
     }
 
-    document.querySelectorAll(".findbot-action").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.dataset.id
-        const action = btn.dataset.action
-        if (action === "activate") this.activate(id)
-        else this.deactivate(id)
+    // Thêm sự kiện cho các nút chi tiết
+    document.querySelectorAll('.findbot-detail').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const botId = btn.dataset.id
+        this.showBotTaskDetails(botId)
       })
     })
 
-    document.querySelectorAll(".findbot-detail").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const bot = this.bots.find((b) => b.id === btn.dataset.id)
-        if (bot) this.showDetails(bot)
+    // Thêm sự kiện cho các nút điều khiển FindBot
+    document.querySelectorAll('.findbot-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const botId = btn.dataset.id
+        const currentStatus = btn.dataset.status
+
+        if (currentStatus === 'active') {
+          this.deactivate(botId)
+        } else if (currentStatus === 'inactive') {
+          this.activate(botId)
+        }
       })
     })
   }
@@ -2402,50 +2478,219 @@ class FindBotSystem {
   }
 
   timeAgo(ts) {
-    const diff = Date.now() - ts
-    const mins = Math.floor(diff / 60000)
-    if (mins < 1) return "Vừa xong"
-    if (mins < 60) return `${mins} phút trước`
-    const hrs = Math.floor(mins / 60)
-    if (hrs < 24) return `${hrs} giờ trước`
-    const days = Math.floor(hrs / 24)
-    return `${days} ngày trước`
+    const now = Date.now()
+    const diff = now - ts
+    const seconds = Math.floor(diff / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+
+    if (seconds < 60) return `${seconds} giây trước`
+    if (minutes < 60) return `${minutes} phút trước`
+    return `${hours} giờ trước`
   }
 
-  async activate(id) {
+  async activate(botId) {
     try {
-      await fetch(`${this.apiBase}/findbots/${id}/activate`, { method: "POST" })
-    } catch (e) {
-      console.error("Activate failed", e)
+      const bot = this.bots.find(b => b.id === botId)
+      if (!bot) return
+
+      // Kiểm tra điều kiện kích hoạt
+      if (bot.status === 'offline') {
+        if (window.Swal) {
+          Swal.fire({
+            title: 'Không Thể Kích Hoạt',
+            text: 'FindBot đang ngoại tuyến. Vui lòng sạc pin và thử lại.',
+            icon: 'warning',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+          })
+        }
+        return
+      }
+
+      // Gọi API kích hoạt (mô phỏng)
+      const response = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            ok: true,
+            json: () => Promise.resolve({ message: 'Kích hoạt thành công' })
+          })
+        }, 500)
+      })
+
+      if (!response.ok) throw new Error('Lỗi kết nối')
+
+      const result = await response.json()
+
+      // Cập nhật trạng thái
+      bot.status = 'active'
+      bot.task = 'Sẵn sàng hoạt động'
+
+      // Hiển thị thông báo
+      if (window.Swal) {
+        Swal.fire({
+          title: 'FindBot Đã Kích Hoạt',
+          text: `${bot.name} đã sẵn sàng hoạt động.`,
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+
+      // Làm mới giao diện
+      this.render()
+      this.renderStats()
+    } catch (error) {
+      console.error('Lỗi kích hoạt FindBot:', error)
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Lỗi',
+          text: 'Không thể kích hoạt FindBot. Vui lòng thử lại.',
+          icon: 'error',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
     }
-    this.refresh()
   }
 
-  async deactivate(id) {
+  async deactivate(botId) {
     try {
-      await fetch(`${this.apiBase}/findbots/${id}/deactivate`, { method: "POST" })
-    } catch (e) {
-      console.error("Deactivate failed", e)
+      const bot = this.bots.find(b => b.id === botId)
+      if (!bot) return
+
+      // Kiểm tra điều kiện dừng
+      if (bot.status === 'offline') {
+        if (window.Swal) {
+          Swal.fire({
+            title: 'Không Thể Dừng',
+            text: 'FindBot đang ngoại tuyến.',
+            icon: 'warning',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+          })
+        }
+        return
+      }
+
+      // Xác nhận dừng
+      const confirmed = await Swal.fire({
+        title: 'Dừng FindBot',
+        text: `Bạn có chắc muốn tạm dừng ${bot.name}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Dừng',
+        cancelButtonText: 'Hủy'
+      })
+
+      if (!confirmed.isConfirmed) return
+
+      // Gọi API dừng (mô phỏng)
+      const response = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            ok: true,
+            json: () => Promise.resolve({ message: 'Dừng thành công' })
+          })
+        }, 500)
+      })
+
+      if (!response.ok) throw new Error('Lỗi kết nối')
+
+      const result = await response.json()
+
+      // Cập nhật trạng thái
+      bot.status = 'inactive'
+      bot.task = 'Chờ lệnh'
+
+      // Hiển thị thông báo
+      if (window.Swal) {
+        Swal.fire({
+          title: 'FindBot Đã Dừng',
+          text: `${bot.name} đã được tạm dừng.`,
+          icon: 'info',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+
+      // Làm mới giao diện
+      this.render()
+      this.renderStats()
+    } catch (error) {
+      console.error('Lỗi dừng FindBot:', error)
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Lỗi',
+          text: 'Không thể dừng FindBot. Vui lòng thử lại.',
+          icon: 'error',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
     }
-    this.refresh()
   }
 
   async startAll() {
     try {
-      await fetch(`${this.apiBase}/findbots/startAll`, { method: "POST" })
-    } catch (e) {
-      console.error("startAll failed", e)
+      this.bots.forEach(bot => {
+        if (bot.status !== 'active') {
+          bot.status = 'active'
+        }
+      })
+      this.refresh()
+      
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Kích Hoạt FindBot',
+          text: 'Tất cả FindBot đã được kích hoạt.',
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+    } catch (error) {
+      console.error("Lỗi kích hoạt tất cả FindBot:", error)
     }
-    this.refresh()
   }
 
   async stopAll() {
     try {
-      await fetch(`${this.apiBase}/findbots/stopAll`, { method: "POST" })
-    } catch (e) {
-      console.error("stopAll failed", e)
+      this.bots.forEach(bot => {
+        if (bot.status === 'active') {
+          bot.status = 'inactive'
+        }
+      })
+      this.refresh()
+      
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Dừng FindBot',
+          text: 'Tất cả FindBot đã được tạm dừng.',
+          icon: 'warning',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+    } catch (error) {
+      console.error("Lỗi dừng tất cả FindBot:", error)
     }
-    this.refresh()
   }
 
   showDetails(bot) {
@@ -2466,22 +2711,739 @@ class FindBotSystem {
 
   toggleView() {
     this.viewMode = this.viewMode === "table" ? "grid" : "table"
-    const tableEl = document.getElementById("findBotsTable")
-    const cardsEl = document.getElementById("findBotsCards")
+    
+    const tableContainer = document.querySelector(".findbots-table-container")
+    const cardsContainer = document.getElementById("findBotsCards")
     const toggleBtn = document.getElementById("toggleBotsView")
+
     if (this.viewMode === "grid") {
-      if (tableEl) tableEl.closest(".findbots-table-container").style.display = "none"
-      if (cardsEl) cardsEl.style.display = "grid"
+      if (tableContainer) tableContainer.style.display = "none"
+      if (cardsContainer) cardsContainer.style.display = "grid"
       if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-list"></i>'
     } else {
-      if (tableEl) tableEl.closest(".findbots-table-container").style.display = "block"
-      if (cardsEl) cardsEl.style.display = "none"
+      if (tableContainer) tableContainer.style.display = "block"
+      if (cardsContainer) cardsContainer.style.display = "none"
       if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-th-large"></i>'
     }
+
     this.render()
+  }
+
+  // Thêm phương thức xem chi tiết nhiệm vụ
+  showBotTaskDetails(botId) {
+    const tasks = this.botTasks[botId] || []
+    const bot = this.bots.find(b => b.id === botId)
+    
+    if (!bot) return
+
+    const taskHtml = tasks.length > 0 
+      ? tasks.map(task => `
+        <div class="task-item ${task.status}">
+          <div class="task-header">
+            <span class="task-name">${task.name}</span>
+            <span class="task-status ${task.status}">${this.getTaskStatusText(task.status)}</span>
+          </div>
+          <div class="task-details">
+            <p>Bắt đầu: ${task.startTime ? new Date(task.startTime).toLocaleString() : 'Chưa bắt đầu'}</p>
+            <p>Kết thúc: ${task.endTime ? new Date(task.endTime).toLocaleString() : 'Chưa hoàn thành'}</p>
+          </div>
+        </div>
+      `).join('')
+      : '<p>Không có nhiệm vụ nào.</p>'
+
+    const detailHtml = `
+      <div class="bot-task-details">
+        <div class="bot-info">
+          <h3>${bot.name} - Chi Tiết Nhiệm Vụ</h3>
+          <div class="bot-status-info">
+            <span class="status-badge status-${bot.status}">${this.getStatusText(bot.status)}</span>
+            <span class="battery-info">Pin: ${bot.battery || 0}%</span>
+          </div>
+        </div>
+        <div class="tasks-list">
+          <h4>Danh Sách Nhiệm Vụ</h4>
+          ${taskHtml}
+        </div>
+        <div class="remote-control">
+          <h4>Điều Khiển Từ Xa</h4>
+          <div class="remote-buttons">
+            <button class="btn btn-primary remote-action" data-action="scan">
+              <i class="fas fa-search"></i> Quét Kệ
+            </button>
+            <button class="btn btn-secondary remote-action" data-action="reposition">
+              <i class="fas fa-sync"></i> Sắp Xếp Hàng
+            </button>
+            <button class="btn btn-warning remote-action" data-action="report">
+              <i class="fas fa-exclamation-triangle"></i> Báo Cáo Lỗi
+            </button>
+          </div>
+        </div>
+      </div>
+    `
+
+    if (window.Swal) {
+      Swal.fire({
+        title: `Chi Tiết FindBot: ${bot.name}`,
+        html: detailHtml,
+        width: '600px',
+        showCloseButton: true,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'findbot-details-modal'
+        }
+      })
+
+      // Thêm sự kiện cho các nút điều khiển từ xa
+      document.querySelectorAll('.remote-action').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const action = btn.dataset.action
+          this.sendRemoteCommand(botId, action)
+        })
+      })
+    }
+  }
+
+  // Gửi lệnh điều khiển từ xa
+  async sendRemoteCommand(botId, action) {
+    try {
+      const response = await fetch(`${this.apiBase}/findbots/${botId}/remote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      })
+
+      if (!response.ok) throw new Error('Lỗi kết nối')
+
+      const result = await response.json()
+      
+      // Hiển thị kết quả
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Lệnh Điều Khiển',
+          text: result.message || 'Lệnh đã được gửi thành công',
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+
+      // Làm mới trạng thái
+      this.refresh()
+    } catch (error) {
+      console.error('Remote command error:', error)
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Lỗi',
+          text: 'Không thể gửi lệnh. Vui lòng thử lại.',
+          icon: 'error',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+    }
+  }
+
+  // Trợ lý phương thức
+  getTaskStatusText(status) {
+    const statusMap = {
+      'pending': 'Chờ xử lý',
+      'in_progress': 'Đang thực hiện',
+      'completed': 'Hoàn thành',
+      'failed': 'Thất bại'
+    }
+    return statusMap[status] || status
+  }
+
+  getStatusText(status) {
+    const statusMap = {
+      'active': 'Đang hoạt động',
+      'inactive': 'Không hoạt động',
+      'offline': 'Ngoại tuyến'
+    }
+    return statusMap[status] || status
+  }
+
+  // Thêm phương thức tạo FindBot mới
+  createNewBot(botData) {
+    try {
+      // Tạo ID tự động
+      const newBotId = `FB${this.bots.length + 1 < 10 ? '0' : ''}${this.bots.length + 1}`
+      
+      // Tạo đối tượng FindBot mới
+      const newBot = {
+        id: newBotId,
+        name: botData.name || `FindBot ${this.bots.length + 1}`,
+        status: 'inactive', // Mặc định là không hoạt động khi mới tạo
+        battery: 100, // Pin đầy khi mới tạo
+        task: 'Chưa có nhiệm vụ',
+        lastSeen: Date.now(),
+        location: botData.location || 'Chưa xác định',
+        serialNumber: `FB-${newBotId}-2025`,
+        model: botData.model || 'FindBot Standard',
+        capabilities: botData.capabilities || ['Quét kệ', 'Kiểm kê']
+      }
+
+      // Thêm vào danh sách
+      this.bots.push(newBot)
+
+      // Làm mới giao diện
+      this.render()
+      this.renderStats()
+
+      // Hiển thị thông báo
+      if (window.Swal) {
+        Swal.fire({
+          title: 'FindBot Mới',
+          html: `Đã tạo FindBot mới:<br>ID: <strong>${newBot.id}</strong><br>Tên: ${newBot.name}`,
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+
+      return newBot
+    } catch (error) {
+      console.error('Lỗi tạo FindBot mới:', error)
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Lỗi',
+          text: 'Không thể tạo FindBot mới. Vui lòng thử lại.',
+          icon: 'error',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+    }
+  }
+
+  // Cập nhật phương thức activate với thông báo chi tiết
+  async activate(botId) {
+    try {
+      const bot = this.bots.find(b => b.id === botId)
+      if (!bot) return
+
+      // Kiểm tra điều kiện kích hoạt
+      if (bot.status === 'offline') {
+        if (window.Swal) {
+          Swal.fire({
+            title: 'Không Thể Kích Hoạt',
+            html: `FindBot <strong>${botId}</strong> đang ngoại tuyến. Vui lòng sạc pin và thử lại.`,
+            icon: 'warning',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+          })
+        }
+        return
+      }
+
+      // Gọi API kích hoạt (mô phỏng)
+      const response = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            ok: true,
+            json: () => Promise.resolve({ message: 'Kích hoạt thành công' })
+          })
+        }, 500)
+      })
+
+      if (!response.ok) throw new Error('Lỗi kết nối')
+
+      const result = await response.json()
+
+      // Cập nhật trạng thái
+      bot.status = 'active'
+      bot.task = 'Sẵn sàng hoạt động'
+
+      // Hiển thị thông báo
+      if (window.Swal) {
+        Swal.fire({
+          title: 'FindBot Đã Kích Hoạt',
+          html: `FindBot <strong>${botId}</strong> (${bot.name}) đã sẵn sàng hoạt động.`,
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+
+      // Làm mới giao diện
+      this.render()
+      this.renderStats()
+    } catch (error) {
+      console.error('Lỗi kích hoạt FindBot:', error)
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Lỗi',
+          html: `Không thể kích hoạt FindBot <strong>${botId}</strong>. Vui lòng thử lại.`,
+          icon: 'error',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+    }
+  }
+
+  // Cập nhật phương thức deactivate với thông báo chi tiết
+  async deactivate(botId) {
+    try {
+      const bot = this.bots.find(b => b.id === botId)
+      if (!bot) return
+
+      // Kiểm tra điều kiện dừng
+      if (bot.status === 'offline') {
+        if (window.Swal) {
+          Swal.fire({
+            title: 'Không Thể Dừng',
+            html: `FindBot <strong>${botId}</strong> đang ngoại tuyến.`,
+            icon: 'warning',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+          })
+        }
+        return
+      }
+
+      // Xác nhận dừng
+      const confirmed = await Swal.fire({
+        title: 'Dừng FindBot',
+        html: `Bạn có chắc muốn tạm dừng FindBot <strong>${botId}</strong> (${bot.name})?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Dừng',
+        cancelButtonText: 'Hủy'
+      })
+
+      if (!confirmed.isConfirmed) return
+
+      // Gọi API dừng (mô phỏng)
+      const response = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            ok: true,
+            json: () => Promise.resolve({ message: 'Dừng thành công' })
+          })
+        }, 500)
+      })
+
+      if (!response.ok) throw new Error('Lỗi kết nối')
+
+      const result = await response.json()
+
+      // Cập nhật trạng thái
+      bot.status = 'inactive'
+      bot.task = 'Chờ lệnh'
+
+      // Hiển thị thông báo
+      if (window.Swal) {
+        Swal.fire({
+          title: 'FindBot Đã Dừng',
+          html: `FindBot <strong>${botId}</strong> (${bot.name}) đã được tạm dừng.`,
+          icon: 'info',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+
+      // Làm mới giao diện
+      this.render()
+      this.renderStats()
+    } catch (error) {
+      console.error('Lỗi dừng FindBot:', error)
+      if (window.Swal) {
+        Swal.fire({
+          title: 'Lỗi',
+          html: `Không thể dừng FindBot <strong>${botId}</strong>. Vui lòng thử lại.`,
+          icon: 'error',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        })
+      }
+    }
   }
 } // End class
 
 // Global instance
 const findBotSystem = new FindBotSystem()
 window.findBotSystem = findBotSystem
+
+// Mở rộng dữ liệu mẫu FindBot để có trải nghiệm demo chi tiết
+const DEMO_FINDBOTS = [
+  {
+    id: "FB01", 
+    name: "FindBot Quét Kệ A", 
+    status: "active", 
+    battery: 85, 
+    task: "Đang quét kệ thực phẩm", 
+    lastSeen: Date.now() - 15000,
+    location: "Khu A - Tầng 1",
+    serialNumber: "FB-A001-2025",
+    model: "FindBot Compact",
+    capabilities: ["Quét kệ", "Kiểm kê", "Báo cáo lỗi"]
+  },
+  {
+    id: "FB02", 
+    name: "FindBot Sắp Xếp Hàng", 
+    status: "active", 
+    battery: 62, 
+    task: "Sắp xếp hàng trong kho", 
+    lastSeen: Date.now() - 45000,
+    location: "Kho Hàng - Tầng 2",
+    serialNumber: "FB-B002-2025",
+    model: "FindBot Pro",
+    capabilities: ["Sắp xếp hàng", "Di chuyển pallet", "Kiểm tra hàng tồn"]
+  },
+  {
+    id: "FB03", 
+    name: "FindBot Kiểm Tra Nhiệt Độ", 
+    status: "inactive", 
+    battery: 40, 
+    task: "Chờ nhiệm vụ", 
+    lastSeen: Date.now() - 3600000,
+    location: "Khu Bảo Quản Lạnh",
+    serialNumber: "FB-C003-2025",
+    model: "FindBot Thermal",
+    capabilities: ["Giám sát nhiệt độ", "Cảnh báo nhiệt", "Ghi nhật ký môi trường"]
+  },
+  {
+    id: "FB04", 
+    name: "FindBot Báo Cáo Tồn Kho", 
+    status: "offline", 
+    battery: 10, 
+    task: "Ngừng hoạt động", 
+    lastSeen: Date.now() - 86400000,
+    location: "Trạm Sạc",
+    serialNumber: "FB-D004-2025",
+    model: "FindBot Inventory",
+    capabilities: ["Kiểm kê tồn kho", "Phân tích xu hướng", "Báo cáo chi tiết"]
+  }
+]
+
+// Mở rộng dữ liệu nhiệm vụ demo
+const DEMO_BOT_TASKS = {
+  "FB01": [
+    { 
+      id: "T001", 
+      name: "Quét kệ thực phẩm tươi", 
+      status: "completed", 
+      startTime: Date.now() - 7200000, 
+      endTime: Date.now() - 6600000,
+      details: {
+        shelves: ["A1", "A2", "A3"],
+        itemsScanned: 342,
+        issuesFound: 3
+      }
+    },
+    { 
+      id: "T002", 
+      name: "Kiểm tra hàng tồn kho", 
+      status: "in_progress", 
+      startTime: Date.now() - 1800000,
+      details: {
+        currentShelf: "A4",
+        itemsProcessed: 128,
+        estimatedCompletion: Date.now() + 3600000
+      }
+    }
+  ],
+  "FB02": [
+    { 
+      id: "T003", 
+      name: "Sắp xếp hàng mới về", 
+      status: "pending", 
+      startTime: null,
+      details: {
+        expectedStartTime: Date.now() + 600000,
+        palletCount: 5,
+        category: "Đồ gia dụng"
+      }
+    },
+    { 
+      id: "T004", 
+      name: "Di chuyển pallet hết hạn", 
+      status: "completed", 
+      startTime: Date.now() - 5400000, 
+      endTime: Date.now() - 5000000,
+      details: {
+        palletsMoved: 3,
+        destination: "Khu hàng giảm giá"
+      }
+    }
+  ],
+  "FB03": [
+    { 
+      id: "T005", 
+      name: "Giám sát nhiệt độ kho lạnh", 
+      status: "failed", 
+      startTime: Date.now() - 10800000, 
+      endTime: Date.now() - 10500000,
+      details: {
+        temperatureRange: [-2, 4],
+        alertTriggered: true,
+        alertReason: "Nhiệt độ vượt ngưỡng"
+      }
+    }
+  ],
+  "FB04": []
+}
+
+// Cập nhật phương thức fetchBots để sử dụng dữ liệu demo
+FindBotSystem.prototype.fetchBots = function() {
+  try {
+    // Sử dụng dữ liệu demo
+    this.bots = DEMO_FINDBOTS
+    this.botTasks = DEMO_BOT_TASKS
+    
+    // Lưu vào localStorage để giữ trạng thái
+    localStorage.setItem("mock_findbots", JSON.stringify(this.bots))
+    localStorage.setItem("mock_findbot_tasks", JSON.stringify(this.botTasks))
+  } catch (e) {
+    console.error("Lỗi tải dữ liệu FindBot demo", e)
+  }
+}
+
+// Mở rộng phương thức showBotTaskDetails để hiển thị thêm thông tin chi tiết
+FindBotSystem.prototype.showBotTaskDetails = function(botId) {
+  const tasks = this.botTasks[botId] || []
+  const bot = this.bots.find(b => b.id === botId)
+  
+  if (!bot) return
+
+  const taskHtml = tasks.length > 0 
+    ? tasks.map(task => `
+      <div class="task-item ${task.status}">
+        <div class="task-header">
+          <span class="task-name">${task.name}</span>
+          <span class="task-status ${task.status}">${this.getTaskStatusText(task.status)}</span>
+        </div>
+        <div class="task-details">
+          <p>Bắt đầu: ${task.startTime ? new Date(task.startTime).toLocaleString() : 'Chưa bắt đầu'}</p>
+          <p>Kết thúc: ${task.endTime ? new Date(task.endTime).toLocaleString() : 'Chưa hoàn thành'}</p>
+          ${task.details ? `
+            <div class="task-extra-details">
+              <h5>Chi Tiết Nhiệm Vụ</h5>
+              <pre>${JSON.stringify(task.details, null, 2)}</pre>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `).join('')
+    : '<p>Không có nhiệm vụ nào.</p>'
+
+  const detailHtml = `
+    <div class="bot-task-details">
+      <div class="bot-info">
+        <div>
+          <h3>${bot.name}</h3>
+          <p style="color:#64748b; font-size:0.875rem;">
+            <strong>Mã Serial:</strong> ${bot.serialNumber}<br>
+            <strong>Mô Hình:</strong> ${bot.model}
+          </p>
+        </div>
+        <div class="bot-status-info">
+          <span class="status-badge status-${bot.status}">${this.getStatusText(bot.status)}</span>
+          <span class="battery-info">Pin: ${bot.battery || 0}%</span>
+        </div>
+      </div>
+
+      <div class="bot-additional-info">
+        <div class="info-grid">
+          <div class="info-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Vị Trí: ${bot.location}</span>
+          </div>
+          <div class="info-item">
+            <i class="fas fa-clock"></i>
+            <span>Cập Nhật: ${bot.lastSeen ? this.timeAgo(bot.lastSeen) : '-'}</span>
+          </div>
+        </div>
+        <div class="capabilities">
+          <h4>Khả Năng</h4>
+          <div class="capabilities-list">
+            ${bot.capabilities.map(cap => `<span class="capability-tag">${cap}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="tasks-list">
+        <h4>Danh Sách Nhiệm Vụ</h4>
+        ${taskHtml}
+      </div>
+
+      <div class="remote-control">
+        <h4>Điều Khiển Từ Xa</h4>
+        <div class="remote-buttons">
+          <button class="btn btn-primary remote-action" data-id="${bot.id}" data-action="scan">
+            <i class="fas fa-search"></i> Quét Kệ
+          </button>
+          <button class="btn btn-secondary remote-action" data-id="${bot.id}" data-action="reposition">
+            <i class="fas fa-sync"></i> Sắp Xếp Hàng
+          </button>
+          <button class="btn btn-warning remote-action" data-id="${bot.id}" data-action="report">
+            <i class="fas fa-exclamation-triangle"></i> Báo Cáo Lỗi
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+
+  if (window.Swal) {
+    Swal.fire({
+      title: `Chi Tiết FindBot: ${bot.name}`,
+      html: detailHtml,
+      width: '700px',
+      showCloseButton: true,
+      showConfirmButton: false,
+      customClass: {
+        popup: 'findbot-details-modal'
+      }
+    })
+
+    // Thêm sự kiện cho các nút điều khiển từ xa
+    document.querySelectorAll('.remote-action').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const botId = btn.dataset.id
+        const action = btn.dataset.action
+        this.sendRemoteCommand(botId, action)
+      })
+    })
+  }
+}
+
+// Phương thức timeAgo để hiển thị thời gian cập nhật
+FindBotSystem.prototype.timeAgo = function(timestamp) {
+  const now = Date.now()
+  const diff = now - timestamp
+  const seconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+
+  if (seconds < 60) return `${seconds} giây trước`
+  if (minutes < 60) return `${minutes} phút trước`
+  return `${hours} giờ trước`
+}
+
+// Mở rộng phương thức sendRemoteCommand để có phản hồi demo
+FindBotSystem.prototype.sendRemoteCommand = function(botId, action) {
+  const bot = this.bots.find(b => b.id === botId)
+  if (!bot) return
+
+  const actionMessages = {
+    'scan': `FindBot ${bot.name} đang quét kệ. Vui lòng chờ kết quả.`,
+    'reposition': `Đang di chuyển và sắp xếp hàng tại ${bot.location}.`,
+    'report': `Tạo báo cáo chi tiết cho ${bot.name}. Kiểm tra hệ thống để xem chi tiết.`
+  }
+
+  if (window.Swal) {
+    Swal.fire({
+      title: 'Lệnh Điều Khiển',
+      text: actionMessages[action] || 'Lệnh đã được gửi thành công',
+      icon: 'success',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000
+    })
+  }
+
+  // Cập nhật trạng thái nhiệm vụ demo
+  if (this.botTasks[botId]) {
+    this.botTasks[botId].push({
+      id: `T_${Date.now()}`,
+      name: actionMessages[action],
+      status: 'in_progress',
+      startTime: Date.now()
+    })
+  }
+
+  this.refresh()
+}
+
+// Khởi tạo hệ thống FindBot ngay khi trang web được tải
+document.addEventListener('DOMContentLoaded', function() {
+  // Khởi tạo hệ thống FindBot
+  const findBotSystem = new FindBotSystem()
+  findBotSystem.init()  // Gọi phương thức init để thiết lập các sự kiện
+  window.findBotSystem = findBotSystem
+
+  // Đảm bảo dữ liệu được tải ngay từ đầu
+  findBotSystem.refresh()
+})
+
+// Thêm sự kiện cho việc tạo FindBot mới
+document.addEventListener('DOMContentLoaded', function() {
+  const createNewBotBtn = document.getElementById('createNewBotBtn')
+  const createFindBotModal = document.getElementById('createFindBotModal')
+  const saveNewBotBtn = document.getElementById('saveNewBotBtn')
+  const cancelCreateBotBtn = document.getElementById('cancelCreateBotBtn')
+  const modalCloseBtn = createFindBotModal.querySelector('.modal-close')
+
+  // Mở modal tạo FindBot
+  createNewBotBtn.addEventListener('click', () => {
+    createFindBotModal.style.display = 'flex'
+  })
+
+  // Đóng modal
+  const closeModal = () => {
+    createFindBotModal.style.display = 'none'
+    // Reset form
+    document.getElementById('createFindBotForm').reset()
+  }
+
+  cancelCreateBotBtn.addEventListener('click', closeModal)
+  modalCloseBtn.addEventListener('click', closeModal)
+
+  // Lưu FindBot mới
+  saveNewBotBtn.addEventListener('click', () => {
+    const name = document.getElementById('newBotName').value
+    const model = document.getElementById('newBotModel').value
+    const location = document.getElementById('newBotLocation').value
+
+    // Thu thập khả năng được chọn
+    const capabilityCheckboxes = document.querySelectorAll('input[name="capabilities"]:checked')
+    const capabilities = Array.from(capabilityCheckboxes).map(cb => cb.value)
+
+    // Kiểm tra dữ liệu
+    if (!name || !model) {
+      Swal.fire({
+        title: 'Lỗi',
+        text: 'Vui lòng nhập tên và chọn mô hình FindBot',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      })
+      return
+    }
+
+    // Tạo FindBot mới
+    const newBot = findBotSystem.createNewBot({
+      name: name,
+      model: model,
+      location: location,
+      capabilities: capabilities.length > 0 ? capabilities : undefined
+    })
+
+    // Đóng modal
+    closeModal()
+  })
+})
