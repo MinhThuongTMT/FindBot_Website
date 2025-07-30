@@ -17,6 +17,7 @@ class AuthenticationSystem {
     this.loadSampleUsers()
     this.setupEventListeners()
     this.startLoadingSequence()
+    this.setupPasswordResetEventListeners()
   }
 
   startLoadingSequence() {
@@ -450,6 +451,46 @@ class AuthenticationSystem {
     }
   }
 
+  // Password Reset Methods
+  generateResetCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString()
+  }
+
+  // Email Simulation Method
+  simulateEmailSending(email, resetCode) {
+    // Tạo nội dung email
+    const emailContent = `
+Xin chào,
+
+Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản FindBot.
+
+Mã xác nhận của bạn là: ${resetCode}
+
+Mã này có hiệu lực trong 15 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.
+
+Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+
+Trân trọng,
+Đội ngũ FindBot
+    `;
+
+    // Hiển thị modal mô phỏng email
+    const Swal = window.Swal // Declare Swal variable
+    Swal.fire({
+      title: 'Mô Phỏng Gửi Email',
+      html: `
+        <div style="text-align: left; max-height: 300px; overflow-y: auto; background: #f4f4f4; padding: 15px; border-radius: 8px;">
+          <strong>Tới:</strong> ${email}<br>
+          <strong>Chủ đề:</strong> Đặt Lại Mật Khẩu FindBot<br><br>
+          <pre style="white-space: pre-wrap;">${emailContent}</pre>
+        </div>
+      `,
+      icon: 'info',
+      confirmButtonText: 'Đóng',
+      width: '500px'
+    });
+  }
+
   async handleForgotPassword() {
     const submitBtn = document.getElementById("forgotBtn")
     const email = document.getElementById("forgotEmail").value.trim()
@@ -473,29 +514,138 @@ class AuthenticationSystem {
       const user = this.users.find((u) => u.email === email)
 
       if (user) {
-        // In a real app, you would send an email here
-        this.showAlert(
-          "success",
-          "Email đã được gửi!",
-          "Vui lòng kiểm tra email để nhận hướng dẫn đặt lại mật khẩu.",
-          5000,
-        )
+        // Generate reset code
+        const resetCode = this.generateResetCode()
+        const resetCodeExpiry = Date.now() + 15 * 60 * 1000 // 15 minutes
+
+        // Store reset code details
+        user.resetCode = {
+          code: resetCode,
+          expiry: resetCodeExpiry
+        }
+        this.saveUsers()
+
+        // Simulate email sending
+        this.simulateEmailSending(email, resetCode)
+
+        // Switch to reset code verification
+        this.switchToResetCodeVerification(email)
       } else {
         // Don't reveal if email exists for security
         this.showAlert(
           "success",
           "Email đã được gửi!",
           "Nếu email tồn tại trong hệ thống, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu.",
-          5000,
+          5000
         )
       }
-
-      setTimeout(() => this.switchToLogin(), 3000)
     } catch (error) {
       this.showAlert("error", "Lỗi hệ thống", "Có lỗi xảy ra, vui lòng thử lại!")
     } finally {
       this.setButtonLoading(submitBtn, false)
     }
+  }
+
+  switchToResetCodeVerification(email) {
+    this.hideAllAuthCards()
+    setTimeout(() => {
+      document.getElementById("resetCodeCard").classList.add("active")
+      document.getElementById("resetCodeEmail").value = email
+    }, 300)
+  }
+
+  async handleResetCodeVerification() {
+    const email = document.getElementById("resetCodeEmail").value
+    const resetCode = document.getElementById("resetCode").value.trim()
+
+    if (!resetCode) {
+      this.showAlert("error", "Lỗi", "Vui lòng nhập mã xác nhận!")
+      return
+    }
+
+    const user = this.users.find((u) => u.email === email)
+
+    if (!user || !user.resetCode) {
+      this.showAlert("error", "Lỗi", "Không tìm thấy yêu cầu đặt lại mật khẩu!")
+      return
+    }
+
+    // Check code and expiry
+    if (
+      user.resetCode.code !== resetCode || 
+      Date.now() > user.resetCode.expiry
+    ) {
+      this.showAlert("error", "Lỗi", "Mã xác nhận không hợp lệ hoặc đã hết hạn!")
+      return
+    }
+
+    // Clear reset code
+    delete user.resetCode
+    this.saveUsers()
+
+    // Switch to new password form
+    this.switchToNewPasswordForm(email)
+  }
+
+  switchToNewPasswordForm(email) {
+    this.hideAllAuthCards()
+    setTimeout(() => {
+      document.getElementById("newPasswordCard").classList.add("active")
+      document.getElementById("newPasswordEmail").value = email
+    }, 300)
+  }
+
+  async handleNewPasswordSet() {
+    const email = document.getElementById("newPasswordEmail").value
+    const newPassword = document.getElementById("newResetPassword").value
+    const confirmPassword = document.getElementById("confirmResetPassword").value
+
+    if (!newPassword || !confirmPassword) {
+      this.showAlert("error", "Lỗi", "Vui lòng điền đầy đủ thông tin!")
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      this.showAlert("error", "Lỗi", "Mật khẩu mới và xác nhận không khớp!")
+      return
+    }
+
+    if (newPassword.length < 6) {
+      this.showAlert("error", "Lỗi", "Mật khẩu mới phải có ít nhất 6 ký tự!")
+      return
+    }
+
+    const user = this.users.find((u) => u.email === email)
+
+    if (!user) {
+      this.showAlert("error", "Lỗi", "Không tìm thấy người dùng!")
+      return
+    }
+
+    try {
+      // Update password
+      user.password = this.hashPassword(newPassword)
+      this.saveUsers()
+
+      this.showAlert("success", "Đặt lại mật khẩu thành công!", "Bạn có thể đăng nhập bằng mật khẩu mới.", 3000)
+      
+      // Switch back to login
+      setTimeout(() => this.switchToLogin(), 2000)
+    } catch (error) {
+      this.showAlert("error", "Lỗi hệ thống", "Có lỗi xảy ra, vui lòng thử lại!")
+    }
+  }
+
+  setupPasswordResetEventListeners() {
+    document.getElementById("resetCodeForm")?.addEventListener("submit", (e) => {
+      e.preventDefault()
+      this.handleResetCodeVerification()
+    })
+
+    document.getElementById("newPasswordForm")?.addEventListener("submit", (e) => {
+      e.preventDefault()
+      this.handleNewPasswordSet()
+    })
   }
 
   handleLogout() {

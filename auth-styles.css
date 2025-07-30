@@ -521,7 +521,12 @@
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
     color: white;
     box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
-  }
+    display: block;
+    margin: 1rem auto;
+    text-align: center;
+    width: 100%;
+    max-width: 300px;
+}
   
   .btn-demo:hover {
     transform: translateY(-2px);
@@ -831,4 +836,73 @@
   .auth-card:not(.active) {
     display: none;
   }
+  
+/* Reset Code and New Password Card Styles */
+.reset-code-card,
+.new-password-card {
+  max-width: 400px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.reset-code-card .auth-header,
+.new-password-card .auth-header {
+  text-align: center;
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.reset-code-card .auth-header .auth-logo,
+.new-password-card .auth-header .auth-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.reset-code-card .auth-header .auth-logo i,
+.new-password-card .auth-header .auth-logo i {
+  font-size: 2.5rem;
+  color: #667eea;
+  margin-bottom: 0.5rem;
+}
+
+.reset-code-card .auth-body,
+.new-password-card .auth-body {
+  padding: 1.5rem;
+}
+
+.reset-code-card .auth-footer,
+.new-password-card .auth-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.reset-code-card .auth-footer a,
+.new-password-card .auth-footer a {
+  color: #667eea;
+  text-decoration: none;
+  margin: 0.25rem 0;
+  transition: color 0.2s ease;
+}
+
+.reset-code-card .auth-footer a:hover,
+.new-password-card .auth-footer a:hover {
+  color: #5a67d8;
+  text-decoration: underline;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+  .reset-code-card,
+  .new-password-card {
+    width: 95%;
+    margin: 0 auto;
+  }
+}
   
